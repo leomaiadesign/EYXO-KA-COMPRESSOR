@@ -1,0 +1,835 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>EYXO | KA COMPRESSOR</title>
+    <link rel="icon" href="/static/eyxo_favicon.png">
+    
+    <style>
+        :root {
+            --eyxo-blue: #0000FF; 
+            --eyxo-bg: #000000;
+            --eyxo-surface: #0A0A0A;
+            --eyxo-surface-hover: #141414;
+            --eyxo-border: #1F1F1F;
+            --eyxo-text: #FFFFFF;
+            --eyxo-text-muted: #8F8F8F;
+        }
+
+        body {
+            font-family: 'Moderat', 'Helvetica Neue', Helvetica, Arial, sans-serif;
+            background-color: var(--eyxo-bg);
+            color: var(--eyxo-text);
+            margin: 0;
+            padding: 0;
+            height: 100vh;
+            display: flex;
+        }
+        
+        .mono-font {
+            font-family: 'Moderat Mono', 'Courier New', Courier, monospace;
+        }
+        
+        /* Tipografia */
+        h1 {
+            color: var(--eyxo-text);
+            font-size: 24px;
+            font-weight: 700;
+            margin-top: 0;
+            margin-bottom: 5px;
+            letter-spacing: -0.5px;
+            display: flex;
+            align-items: center;
+            gap: 15px;
+        }
+        .brand-light { font-weight: 300; color: var(--eyxo-text-muted); font-size: 18px; }
+        
+        p {
+            color: var(--eyxo-text-muted);
+            font-size: 15px;
+            font-weight: 400;
+            line-height: 1.5;
+            margin-bottom: 30px;
+        }
+        
+        /* Layout */
+        .sidebar {
+            width: 360px;
+            background-color: var(--eyxo-bg);
+            padding: 40px;
+            display: flex;
+            flex-direction: column;
+            z-index: 10;
+            border-right: 1px solid var(--eyxo-border);
+            box-sizing: border-box;
+        }
+        .main-content {
+            flex: 1;
+            padding: 50px;
+            overflow-y: auto;
+            background-color: var(--eyxo-bg);
+            background-image: radial-gradient(var(--eyxo-border) 1px, transparent 1px);
+            background-size: 20px 20px;
+        }
+        
+        #upload-form {
+            display: flex;
+            flex-direction: column;
+            flex: 1;
+            min-height: 0; /* Crucial para o file-list encolher e scrollar internamente */
+        }
+        
+        /* Upload Area */
+        .upload-area {
+            border: 2px dashed var(--eyxo-border);
+            border-radius: 12px;
+            padding: 35px 15px;
+            text-align: center;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            margin-bottom: 15px;
+            background-color: var(--eyxo-surface);
+        }
+        .upload-area:hover { 
+            background-color: var(--eyxo-surface-hover);
+            border-color: var(--eyxo-blue);
+            color: var(--eyxo-blue);
+        }
+        .upload-area svg { transition: stroke 0.3s ease; }
+        .upload-area:hover svg { stroke: var(--eyxo-blue); }
+        .upload-area input[type="file"] { display: none; }
+        
+        /* File List UI */
+        #file-list-container {
+            flex-shrink: 1;
+            min-height: 0;
+            overflow-y: auto;
+            margin-bottom: 20px;
+            padding-right: 5px;
+        }
+        #file-list-container::-webkit-scrollbar { width: 4px; }
+        #file-list-container::-webkit-scrollbar-thumb { background: var(--eyxo-border); border-radius: 4px; }
+
+        .file-list {
+            display: flex;
+            flex-direction: column;
+            gap: 10px;
+            /* A altura se adapta e quem scrolla é o container */
+        }
+        
+        .file-item {
+            background: var(--eyxo-surface);
+            border: 1px solid var(--eyxo-border);
+            border-radius: 8px;
+            padding: 10px 12px;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+        .file-item-info {
+            display: flex;
+            flex-direction: column;
+            overflow: hidden;
+            padding-right: 15px;
+            flex: 1;
+        }
+        .file-item-name {
+            font-size: 13px;
+            font-weight: 600;
+            color: var(--eyxo-text);
+            white-space: nowrap;
+            overflow: hidden;
+            text-overflow: ellipsis;
+        }
+        .file-item-size {
+            font-size: 11px;
+            color: var(--eyxo-text-muted);
+            margin-top: 3px;
+        }
+        input[type="number"].file-item-input {
+            width: 80px;
+            background: var(--eyxo-bg);
+            border: 1px solid var(--eyxo-border);
+            color: var(--eyxo-text);
+            border-radius: 4px;
+            padding: 6px 8px;
+            font-size: 12px;
+            font-family: 'Moderat Mono', monospace;
+            text-align: right;
+            transition: border-color 0.2s;
+        }
+        input[type="number"].file-item-input::placeholder { color: #555; }
+        input[type="number"].file-item-input:focus { outline: none; border-color: var(--eyxo-blue); }
+
+        /* Botões */
+        .btn {
+            background-color: var(--eyxo-blue);
+            color: #FFF;
+            border: none;
+            padding: 16px 24px;
+            border-radius: 50px;
+            font-size: 14px;
+            font-family: 'Moderat', sans-serif;
+            font-weight: 600;
+            text-transform: uppercase;
+            letter-spacing: 1.5px;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            width: 100%;
+            text-align: center;
+            text-decoration: none;
+            display: inline-block;
+            box-sizing: border-box;
+        }
+        .btn:hover { 
+            background-color: #0000D1; 
+            transform: translateY(-2px);
+            box-shadow: 0 10px 20px rgba(0,0,255,0.2);
+        }
+        .btn:disabled { 
+            background-color: var(--eyxo-surface); 
+            color: var(--eyxo-text-muted);
+            border: 1px solid var(--eyxo-border);
+            cursor: not-allowed;
+            transform: none;
+            box-shadow: none;
+        }
+        .btn-success { 
+            background-color: var(--eyxo-text); 
+            border: none;
+            margin-top: 15px; 
+            color: var(--eyxo-bg);
+            font-weight: 700;
+        }
+        .btn-success:hover { 
+            background-color: #D4D4D8; 
+            box-shadow: 0 10px 20px rgba(255,255,255,0.15);
+        }
+        
+        /* Inputs */
+        input[type="number"] {
+            font-family: 'Moderat Mono', 'Courier New', monospace;
+            width: 100%; 
+            padding: 14px; 
+            background-color: var(--eyxo-surface);
+            border: 1px solid var(--eyxo-border); 
+            border-radius: 10px; 
+            box-sizing: border-box; 
+            font-size: 16px;
+            font-weight: 500;
+            color: var(--eyxo-text);
+            transition: border-color 0.3s ease;
+            outline: none;
+        }
+        input[type="number"]:focus {
+            border-color: var(--eyxo-blue);
+        }
+        
+        .loader {
+            display: none;
+            border: 3px solid var(--eyxo-border);
+            border-top: 3px solid var(--eyxo-blue);
+            border-radius: 50%;
+            width: 24px;
+            height: 24px;
+            animation: spin 1s cubic-bezier(0.4, 0, 0.2, 1) infinite;
+            margin: 15px auto;
+        }
+        @keyframes spin { 100% { transform: rotate(360deg); } }
+
+        /* Bento Grid */
+        .bento-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fill, minmax(240px, 1fr));
+            grid-auto-rows: 240px;
+            grid-auto-flow: dense;
+            gap: 24px;
+        }
+        .bento-item {
+            background: var(--eyxo-bg);
+            border-radius: 20px;
+            overflow: hidden;
+            display: flex;
+            flex-direction: column;
+            border: 1px solid var(--eyxo-border);
+            transition: all 0.3s cubic-bezier(0.25, 0.8, 0.25, 1);
+        }
+        .bento-item:hover {
+            transform: translateY(-5px);
+            box-shadow: 0 20px 40px rgba(0,0,255,0.1), 0 0 0 2px var(--eyxo-blue);
+            border-color: var(--eyxo-blue);
+        }
+        
+        .span-col-2 { grid-column: span 2; }
+        .span-row-2 { grid-row: span 2; }
+        
+        @media (min-width: 1600px) {
+            .bento-grid {
+                grid-template-columns: repeat(auto-fill, minmax(280px, 1fr));
+                grid-auto-rows: 280px;
+            }
+        }
+
+        .img-preview {
+            flex: 1;
+            /* Checkerboard mais claro para aumentar o contraste no dark mode */
+            background: 
+                linear-gradient(45deg, #222222 25%, transparent 25%, transparent 75%, #222222 75%, #222222), 
+                linear-gradient(45deg, #222222 25%, transparent 25%, transparent 75%, #222222 75%, #222222);
+            background-color: #151515;
+            background-size: 20px 20px;
+            background-position: 0 0, 10px 10px;
+            
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            overflow: hidden;
+            border-bottom: 1px solid var(--eyxo-border);
+            padding: 15px;
+            cursor: zoom-in;
+            position: relative;
+        }
+        .img-preview img {
+            max-width: 100%;
+            max-height: 100%;
+            object-fit: contain;
+            filter: drop-shadow(0 4px 12px rgba(0,0,0,0.5));
+            transition: transform 0.4s cubic-bezier(0.2, 0.8, 0.2, 1);
+        }
+        .img-preview:hover img {
+            transform: scale(1.08);
+        }
+        
+        .delete-btn {
+            position: absolute;
+            top: 15px; right: 15px;
+            background: var(--eyxo-surface);
+            border: 1px solid var(--eyxo-border);
+            border-radius: 50%;
+            width: 36px; height: 36px;
+            display: flex; justify-content: center; align-items: center;
+            cursor: pointer;
+            box-shadow: 0 4px 10px rgba(0,0,0,0.5);
+            color: var(--eyxo-text-muted);
+            transition: all 0.2s;
+            opacity: 0;
+            transform: scale(0.9);
+        }
+        .bento-item:hover .delete-btn { opacity: 1; transform: scale(1); }
+        .delete-btn:hover { background: #FF3B30; color: white; border-color: #FF3B30; transform: scale(1.1) !important; }
+        
+        .item-info {
+            padding: 15px 20px;
+            background: var(--eyxo-surface);
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            font-size: 14px;
+        }
+        .item-name {
+            font-weight: 600;
+            color: var(--eyxo-text);
+            white-space: nowrap;
+            overflow: hidden;
+            text-overflow: ellipsis;
+            max-width: 50%;
+        }
+        .item-stats {
+            text-align: right;
+            display: flex;
+            flex-direction: column;
+            gap: 2px;
+        }
+        .stat-final { font-weight: 700; color: var(--eyxo-text); font-size: 15px; letter-spacing: 0.5px; }
+        .stat-orig { color: var(--eyxo-text-muted); text-decoration: line-through; font-size: 12px; }
+
+        .empty-state {
+            height: 100%;
+            display: flex;
+            flex-direction: column;
+            justify-content: center;
+            align-items: center;
+            color: var(--eyxo-text-muted);
+            text-align: center;
+        }
+        
+        /* Lightbox */
+        .lightbox {
+            position: fixed;
+            top: 0; left: 0; width: 100%; height: 100%;
+            background: rgba(0,0,0,0.95);
+            z-index: 9999;
+            display: none;
+            justify-content: center;
+            align-items: center;
+            backdrop-filter: blur(15px);
+        }
+        .lightbox.active { display: flex; }
+        .lightbox-content {
+            position: relative;
+            max-width: 85vw;
+            max-height: 85vh;
+            /* Checkerboard mais claro para aumentar o contraste no dark mode */
+            background: 
+                linear-gradient(45deg, #222222 25%, transparent 25%, transparent 75%, #222222 75%, #222222), 
+                linear-gradient(45deg, #222222 25%, transparent 25%, transparent 75%, #222222 75%, #222222);
+            background-color: #151515;
+            background-size: 20px 20px;
+            background-position: 0 0, 10px 10px;
+            
+            border-radius: 12px;
+            box-shadow: 0 30px 60px rgba(0,0,0,0.8);
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            cursor: grab;
+            transition: transform 0.15s cubic-bezier(0.2, 0.8, 0.2, 1);
+            transform-origin: center center;
+            border: 1px solid var(--eyxo-border);
+        }
+        .lightbox-content:active { cursor: grabbing; }
+        .lightbox-content.dragging {
+            transition: none !important;
+            cursor: grabbing !important;
+        }
+        .lightbox-content img {
+            max-width: 100%;
+            max-height: 85vh;
+            display: block;
+            border-radius: 12px;
+        }
+        .lightbox-close {
+            position: absolute;
+            top: 25px; right: 35px;
+            color: white; font-size: 40px; cursor: pointer;
+            background: none; border: none; line-height: 1;
+            padding: 10px; z-index: 10000;
+            font-weight: 300;
+            transition: transform 0.2s, color 0.2s;
+        }
+        .lightbox-close:hover { color: var(--eyxo-blue); transform: scale(1.1); }
+        
+        .lightbox-nav {
+            position: absolute;
+            top: 50%; transform: translateY(-50%);
+            color: white; font-size: 50px; cursor: pointer;
+            background: rgba(255,255,255,0.05); border: 1px solid var(--eyxo-border); padding: 20px;
+            opacity: 0.6; transition: all 0.2s;
+            z-index: 10000;
+            border-radius: 50%;
+            width: 80px; height: 80px;
+            display: flex; justify-content: center; align-items: center;
+            backdrop-filter: blur(5px);
+        }
+        .lightbox-nav:hover { opacity: 1; background: var(--eyxo-blue); border-color: var(--eyxo-blue); }
+        .lightbox-prev { left: 30px; }
+        .lightbox-next { right: 30px; }
+        
+        .lightbox-info {
+            position: absolute;
+            bottom: 30px;
+            color: var(--eyxo-text);
+            font-size: 16px;
+            text-align: center;
+            width: 100%;
+            font-weight: 500;
+            z-index: 10000;
+            pointer-events: none;
+            letter-spacing: 0.5px;
+        }
+        .zoom-hint {
+            position: absolute;
+            top: 30px;
+            color: var(--eyxo-text-muted);
+            font-size: 13px;
+            text-align: center;
+            width: 100%;
+            z-index: 10000;
+            pointer-events: none;
+            font-weight: 500;
+            letter-spacing: 1px;
+            text-transform: uppercase;
+        }
+        .zoom-ui {
+            position: absolute;
+            top: 25px;
+            left: 35px;
+            display: flex;
+            align-items: center;
+            gap: 12px;
+            z-index: 10000;
+            background: var(--eyxo-surface);
+            padding: 8px 16px;
+            border-radius: 50px;
+            color: white;
+            font-size: 14px;
+            font-weight: 600;
+            border: 1px solid var(--eyxo-border);
+        }
+        #zoom-reset {
+            background: var(--eyxo-border);
+            border: none;
+            color: white;
+            border-radius: 50px;
+            padding: 4px 12px;
+            cursor: pointer;
+            font-size: 12px;
+            font-family: 'Moderat', sans-serif;
+            transition: background 0.2s;
+            text-transform: uppercase;
+            font-weight: 700;
+            letter-spacing: 0.5px;
+        }
+        #zoom-reset:hover { background: var(--eyxo-blue); }
+        
+        .eyxo-logo {
+            height: 48px;
+            object-fit: contain;
+            object-position: left;
+            align-self: flex-start;
+        }
+    </style>
+</head>
+<body>
+
+    <div class="sidebar">
+        <!-- Logo alinhado à esquerda nativamente via align-self: flex-start -->
+        <img src="/static/eyxo_logo.png" alt="EYXO Logo" class="eyxo-logo" style="margin-bottom: 40px; display: block; height: 48px;">
+        <h2 style="color: var(--eyxo-text); font-size: 16px; font-weight: 700; margin: 0 0 10px 0; letter-spacing: 1.5px; text-transform: uppercase;">KA Compressor</h2>
+        <p style="margin-top: 0;">Ferramenta interna desenvolvida para otimizar peças de KA, visando maior compatibilidade na plataforma do cliente. Envie suas imagens e defina um tamanho limite; a transparência e a resolução originais serão integralmente mantidas.</p>
+
+        <form action="/" method="POST" enctype="multipart/form-data" id="upload-form">
+            <div class="upload-area" id="upload-area">
+                <svg width="28" height="28" viewBox="0 0 24 24" fill="none" stroke="var(--eyxo-text-muted)" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="margin-bottom: 12px;"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"></path><polyline points="17 8 12 3 7 8"></polyline><line x1="12" y1="3" x2="12" y2="15"></line></svg>
+                <p style="margin: 0; font-size: 15px; font-weight: 500; color: var(--eyxo-text);">Clique ou arraste imagens</p>
+                <input type="file" name="images" id="file-input" accept="image/png" multiple>
+            </div>
+            
+            <input type="hidden" id="batch_id" name="batch_id" value="{{ batch_id if batch_id else '' }}">
+            
+            <div id="file-list-container">
+                {% if existing_files %}
+                    <div class="file-list">
+                        {% for file in existing_files %}
+                            <div class="file-item">
+                                <div class="file-item-info">
+                                    <span class="file-item-name" title="{{ file.original_filename }}">{{ file.original_filename }}</span>
+                                    <span class="file-item-size mono-font">{{ file.orig_size }} KB</span>
+                                </div>
+                                <input type="number" class="file-item-input" name="target_kb_{{ file.safe_name }}" min="10" placeholder="Limite KB" value="{{ file.target_kb if file.target_kb else '' }}">
+                            </div>
+                        {% endfor %}
+                    </div>
+                {% endif %}
+            </div>
+
+            <button type="submit" class="btn" id="submit-btn" {% if not existing_files %}disabled{% endif %}>Gerar Previews</button>
+            
+            {% if images and batch_id %}
+                <a href="/download/{{ batch_id }}" class="btn btn-success" style="margin-top: 15px;">Baixar Tudo (ZIP)</a>
+            {% endif %}
+            
+            <div class="loader" id="loader"></div>
+        </form>
+    </div>
+
+    <div class="main-content" id="main-content">
+        {% if images %}
+            <div class="bento-grid">
+                {% for img in images %}
+                <div class="bento-item {{ img.bento_classes }}">
+                    <div class="img-preview" data-name="{{ img.name }}" data-size="{{ img.comp_size }} KB">
+                        <img src="{{ img.url }}" alt="{{ img.name }}">
+                        <button class="delete-btn" onclick="deleteImage(event, '{{ batch_id }}', '{{ img.safe_name }}', this)" title="Excluir imagem">
+                            <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="3 6 5 6 21 6"></polyline><path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"></path></svg>
+                        </button>
+                    </div>
+                    <div class="item-info">
+                        <span class="item-name" title="{{ img.name }}">{{ img.name }}</span>
+                        <div class="item-stats">
+                            <span class="stat-final mono-font">{{ img.comp_size }} KB</span>
+                            <span class="stat-orig mono-font">{{ img.orig_size }} KB</span>
+                        </div>
+                    </div>
+                </div>
+                {% endfor %}
+            </div>
+        {% else %}
+            <div class="empty-state">
+                <img src="/static/eyxo_logo.png" alt="EYXO Logo" style="width: 80px; margin-bottom: 20px;">
+                <h2 style="color: var(--eyxo-text); font-weight: 700; font-size: 24px; margin-bottom: 10px;">Aguardando Imagens</h2>
+                <p style="font-size: 16px; max-width: 300px;">As prévias aparecerão aqui organizadas no formato Bento Grid.</p>
+            </div>
+        {% endif %}
+    </div>
+
+    <!-- Lightbox Modal -->
+    <div class="lightbox" id="lightbox">
+        <div class="zoom-ui">
+            <span id="zoom-level" class="mono-font">100%</span>
+            <button id="zoom-reset" title="Voltar ao tamanho normal">Reset</button>
+        </div>
+        <button class="lightbox-close" id="lb-close">&times;</button>
+        <button class="lightbox-nav lightbox-prev" id="lb-prev">&#10094;</button>
+        
+        <div class="zoom-hint">Scroll para dar Zoom</div>
+        <div class="lightbox-content" id="lb-content">
+            <img src="" id="lb-img" alt="Fullscreen preview">
+        </div>
+        <div class="lightbox-info" id="lb-info"></div>
+        
+        <button class="lightbox-nav lightbox-next" id="lb-next">&#10095;</button>
+    </div>
+    
+    <div class="mono-font" style="position: fixed; bottom: 20px; right: 25px; font-size: 13px; font-weight: 600; color: var(--eyxo-text-muted); z-index: 100; letter-spacing: 0.5px; user-select: none;">
+        v4.1.0
+    </div>
+
+    <script>
+        // Upload logic
+        const uploadArea = document.getElementById('upload-area');
+        const fileInput = document.getElementById('file-input');
+        const submitBtn = document.getElementById('submit-btn');
+        const form = document.getElementById('upload-form');
+        const loader = document.getElementById('loader');
+        const batchIdInput = document.getElementById('batch_id');
+
+        function handleFilesSelected() {
+            if (fileInput.files.length === 0) return;
+            
+            const formData = new FormData();
+            for (let i = 0; i < fileInput.files.length; i++) {
+                formData.append('images', fileInput.files[i]);
+            }
+            
+            submitBtn.textContent = 'Carregando...';
+            submitBtn.disabled = true;
+            
+            fetch('/upload', {
+                method: 'POST',
+                body: formData
+            })
+            .then(res => res.json())
+            .then(data => {
+                if(data.status === 'success') {
+                    batchIdInput.value = data.batch_id;
+                    renderFileList(data.files);
+                    submitBtn.textContent = 'Gerar Previews';
+                    submitBtn.disabled = false;
+                    fileInput.value = '';
+                } else {
+                    alert(data.message);
+                    submitBtn.textContent = 'Gerar Previews';
+                    submitBtn.disabled = false;
+                }
+            })
+            .catch(err => {
+                console.error(err);
+                alert('Erro ao carregar arquivos.');
+                submitBtn.textContent = 'Gerar Previews';
+                submitBtn.disabled = false;
+            });
+        }
+
+        function renderFileList(files) {
+            const container = document.getElementById('file-list-container');
+            if (files.length === 0) {
+                container.innerHTML = '';
+                submitBtn.disabled = true;
+                return;
+            }
+            
+            let html = '<div class="file-list">';
+            files.forEach(f => {
+                html += `
+                    <div class="file-item">
+                        <div class="file-item-info">
+                            <span class="file-item-name" title="${f.original_filename}">${f.original_filename}</span>
+                            <span class="file-item-size mono-font">${f.orig_size} KB</span>
+                        </div>
+                        <input type="number" class="file-item-input" name="target_kb_${f.safe_name}" min="10" placeholder="Limite KB" value="${f.target_kb || ''}">
+                    </div>
+                `;
+            });
+            html += '</div>';
+            container.innerHTML = html;
+        }
+
+        uploadArea.addEventListener('click', () => fileInput.click());
+        fileInput.addEventListener('change', handleFilesSelected);
+        uploadArea.addEventListener('dragover', (e) => { e.preventDefault(); uploadArea.style.backgroundColor = 'var(--eyxo-surface-hover)'; uploadArea.style.borderColor = 'var(--eyxo-blue)'; });
+        uploadArea.addEventListener('dragleave', () => { uploadArea.style.backgroundColor = 'var(--eyxo-surface)'; uploadArea.style.borderColor = 'var(--eyxo-border)'; });
+        uploadArea.addEventListener('drop', (e) => {
+            e.preventDefault();
+            uploadArea.style.backgroundColor = 'var(--eyxo-surface)'; 
+            uploadArea.style.borderColor = 'var(--eyxo-border)';
+            if (e.dataTransfer.files.length > 0) { 
+                fileInput.files = e.dataTransfer.files; 
+                handleFilesSelected();
+            }
+        });
+
+        form.addEventListener('submit', () => {
+            submitBtn.style.display = 'none';
+            loader.style.display = 'block';
+        });
+
+        // Deletar Imagem
+        function deleteImage(e, batchId, safeName, btnElement) {
+            e.stopPropagation();
+            if (!confirm('Deseja mesmo excluir esta imagem?')) return;
+            
+            const bentoItem = btnElement.closest('.bento-item');
+            bentoItem.style.opacity = '0.4';
+            
+            fetch('/delete/' + encodeURIComponent(batchId) + '/' + encodeURIComponent(safeName), { method: 'POST' })
+            .then(res => res.json())
+            .then(data => {
+                if(data.status === 'success') {
+                    bentoItem.remove();
+                    if (document.querySelectorAll('.bento-item').length === 0) {
+                        window.location.href = '/';
+                    }
+                } else {
+                    alert('Erro ao excluir.');
+                    bentoItem.style.opacity = '1';
+                }
+            })
+            .catch(err => {
+                alert('Erro na requisição.');
+                bentoItem.style.opacity = '1';
+            });
+        }
+
+        // Lightbox logic
+        const lightbox = document.getElementById('lightbox');
+        const lbContent = document.getElementById('lb-content');
+        const lbImg = document.getElementById('lb-img');
+        const lbInfo = document.getElementById('lb-info');
+        let currentIdx = 0;
+        let currentScale = 1;
+        let translateX = 0;
+        let translateY = 0;
+        let isDragging = false;
+        let startX = 0;
+        let startY = 0;
+
+        function getPreviews() {
+            return Array.from(document.querySelectorAll('.img-preview'));
+        }
+        
+        function updateTransform() {
+            lbContent.style.transform = `translate(${translateX}px, ${translateY}px) scale(${currentScale})`;
+            document.getElementById('zoom-level').textContent = Math.round(currentScale * 100) + '%';
+        }
+
+        function showLightbox(element) {
+            const previews = getPreviews();
+            if(previews.length === 0) return;
+            
+            currentIdx = previews.indexOf(element);
+            if(currentIdx === -1) currentIdx = 0;
+            
+            const container = previews[currentIdx];
+            const imgEl = container.querySelector('img');
+            lbImg.src = imgEl.src;
+            lbInfo.textContent = `${container.dataset.name} - ${container.dataset.size}`;
+            
+            currentScale = 1;
+            translateX = 0;
+            translateY = 0;
+            updateTransform();
+            
+            lightbox.classList.add('active');
+        }
+
+        function hideLightbox() {
+            lightbox.classList.remove('active');
+        }
+
+        function prevImage() {
+            const previews = getPreviews();
+            currentIdx = (currentIdx - 1 + previews.length) % previews.length;
+            showLightbox(previews[currentIdx]);
+        }
+
+        function nextImage() {
+            const previews = getPreviews();
+            currentIdx = (currentIdx + 1) % previews.length;
+            showLightbox(previews[currentIdx]);
+        }
+
+        document.querySelectorAll('.img-preview').forEach(preview => {
+            preview.addEventListener('click', function(e) {
+                if(!e.target.closest('.delete-btn')) {
+                    showLightbox(this);
+                }
+            });
+        });
+
+        document.getElementById('lb-close').addEventListener('click', hideLightbox);
+        document.getElementById('lb-prev').addEventListener('click', (e) => { e.stopPropagation(); prevImage(); });
+        document.getElementById('lb-next').addEventListener('click', (e) => { e.stopPropagation(); nextImage(); });
+        
+        document.getElementById('zoom-reset').addEventListener('click', (e) => {
+            e.stopPropagation();
+            currentScale = 1;
+            translateX = 0;
+            translateY = 0;
+            updateTransform();
+        });
+        
+        lightbox.addEventListener('click', (e) => {
+            if(e.target === lightbox) hideLightbox();
+        });
+
+        document.addEventListener('keydown', (e) => {
+            if (!lightbox.classList.contains('active')) return;
+            if (e.key === 'Escape') hideLightbox();
+            else if (e.key === 'ArrowLeft') prevImage();
+            else if (e.key === 'ArrowRight') nextImage();
+        });
+        
+        // Panning (Arrastar)
+        lbContent.addEventListener('mousedown', (e) => {
+            if (e.button !== 0) return; // apenas clique esquerdo
+            isDragging = true;
+            startX = e.clientX - translateX;
+            startY = e.clientY - translateY;
+            lbContent.classList.add('dragging');
+            e.preventDefault();
+        });
+        
+        window.addEventListener('mousemove', (e) => {
+            if (!isDragging) return;
+            translateX = e.clientX - startX;
+            translateY = e.clientY - startY;
+            updateTransform();
+        });
+        
+        window.addEventListener('mouseup', () => {
+            if (isDragging) {
+                isDragging = false;
+                lbContent.classList.remove('dragging');
+            }
+        });
+        
+        // Lógica de Zoom no Lightbox
+        lightbox.addEventListener('wheel', (e) => {
+            if (!lightbox.classList.contains('active')) return;
+            e.preventDefault(); 
+            const zoomSpeed = 0.1;
+            
+            if (e.deltaY < 0) { 
+                currentScale += zoomSpeed;
+            } else { 
+                currentScale -= zoomSpeed;
+            }
+            
+            currentScale = Math.min(Math.max(0.2, currentScale), 10);
+            updateTransform();
+        });
+    </script>
+</body>
+</html>

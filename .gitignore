@@ -1,0 +1,16 @@
+# Ambientes Virtuais
+venv/
+env/
+.env
+
+# Arquivos Temporários e de Sistema
+.DS_Store
+__pycache__/
+*.pyc
+
+# Arquivos Temporários de Imagem do app
+static/temp/*
+!static/temp/.gitkeep
+
+# Zips de Backup
+*.zip
