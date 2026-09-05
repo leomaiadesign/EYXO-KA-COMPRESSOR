@@ -13,3 +13,9 @@ Ao final de cada pedido, avalie a complexidade e o impacto das mudanças feitas 
 - **Z (Patch / Terceiro Dígito):** Mude este número para pequenos ajustes visuais (CSS), correções de bugs rápidos, pequenos ajustes de margem/cor, etc (Ex: `v4.1.2` -> `v4.1.3`).
 
 Você não precisa pedir permissão ao usuário para fazer essa alteração de versão, apenas inclua o bump de versão silenciosamente junto com a sua edição de código, e avise no resumo da resposta.
+
+## Changelog Automático no README
+Além de atualizar o `index.html`, sempre que você (Gemini/Antigravity) finalizar uma alteração no código que resulte em uma mudança de versão, você **DEVE** atualizar o arquivo `README.md`.
+Na seção "Últimas Atualizações (Changelog)" do `README.md`, adicione uma linha no formato:
+`- **vX.Y.Z** - Resumo curto e direto da alteração feita.`
+Mantenha sempre **apenas as 3 últimas atualizações** na lista (apague as mais antigas para não poluir o arquivo).

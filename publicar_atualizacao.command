@@ -15,8 +15,11 @@ git add .
 DATA=$(date +"%d/%m/%Y %H:%M")
 git commit -m "Atualização - $DATA"
 
-# 3. Envia para o GitHub (Forçamos na primeira execução caso haja conflito com o upload manual antigo)
-git push origin main --force
+# Pequena pausa para o Google Drive não bloquear o arquivo
+sleep 3
+
+# 3. Envia para o GitHub (Sem --force agora, pois já corrigimos o repositório)
+git push origin main
 
 echo "=========================================="
 echo "✅ SUCESSO! O código foi para o GitHub."
