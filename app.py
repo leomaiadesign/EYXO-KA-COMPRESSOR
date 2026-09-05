@@ -5,7 +5,7 @@ import shutil
 import uuid
 import time
 from flask import Flask, render_template, request, send_file, flash
-from PIL import Image
+from PIL import Image, ImageOps
 from werkzeug.utils import secure_filename
 
 app = Flask(__name__)
@@ -121,10 +121,34 @@ def index():
             best_data = img_io.getvalue()
             
             if target_bytes > 0 and len(best_data) > target_bytes:
-                for colors in [256, 128, 64, 32, 16, 8]:
+                strategies = [
+                    ('posterize', 7),
+                    ('posterize', 6),
+                    ('posterize', 5),
+                    ('posterize', 4),
+                    ('posterize', 3),
+                    ('quantize', 256),
+                    ('quantize', 128),
+                    ('quantize', 64),
+                    ('quantize', 32),
+                    ('quantize', 16),
+                    ('quantize', 8)
+                ]
+                
+                for strat_type, param in strategies:
                     q_io = io.BytesIO()
-                    q_img = img.quantize(colors=colors, method=Image.Quantize.FASTOCTREE)
-                    q_img.save(q_io, format='PNG', optimize=True)
+                    if strat_type == 'posterize':
+                        r, g, b, a = img.split()
+                        r = ImageOps.posterize(r, param)
+                        g = ImageOps.posterize(g, param)
+                        b = ImageOps.posterize(b, param)
+                        a = ImageOps.posterize(a, param)
+                        temp_img = Image.merge('RGBA', (r, g, b, a))
+                    else:
+                        # Fallback seguro: usa FASTOCTREE com dither=1 (Suaviza sombras)
+                        temp_img = img.quantize(colors=param, method=Image.Quantize.FASTOCTREE, dither=1)
+                            
+                    temp_img.save(q_io, format='PNG', optimize=True)
                     if q_io.tell() <= target_bytes:
                         best_data = q_io.getvalue()
                         break
@@ -178,15 +202,29 @@ def download(batch_id):
     if not os.path.isdir(batch_path):
         return "Lote não encontrado ou expirado", 404
         
+    comp_files = sorted([f for f in os.listdir(batch_path) if f.startswith('comp_')])
+    
+    if not comp_files:
+        return "Nenhum arquivo processado encontrado", 404
+        
+    if len(comp_files) == 1:
+        single_file = comp_files[0]
+        file_path = os.path.join(batch_path, single_file)
+        parts = single_file.split('_', 2)
+        clean_name = parts[2] if len(parts) >= 3 else single_file
+        return send_file(
+            file_path,
+            as_attachment=True,
+            download_name=clean_name
+        )
+        
     memory_file = io.BytesIO()
     zip_basename = "imagens"
     
-    comp_files = sorted([f for f in os.listdir(batch_path) if f.startswith('comp_')])
-    if comp_files:
-        first_file = comp_files[0]
-        parts = first_file.split('_', 2)
-        clean_name = parts[2] if len(parts) >= 3 else first_file
-        zip_basename = clean_name.split('_')[0]
+    first_file = comp_files[0]
+    parts = first_file.split('_', 2)
+    clean_name = parts[2] if len(parts) >= 3 else first_file
+    zip_basename = clean_name.split('_')[0]
     
     final_zip_name = f"{zip_basename}_comprimido.zip"
     

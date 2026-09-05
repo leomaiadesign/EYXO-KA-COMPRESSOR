@@ -162,6 +162,7 @@
         input[type="number"].file-item-input::placeholder { color: #555; }
         input[type="number"].file-item-input:focus { outline: none; border-color: var(--eyxo-blue); }
 
+
         /* Botões */
         .btn {
             background-color: var(--eyxo-blue);
@@ -527,10 +528,17 @@
             <button type="submit" class="btn" id="submit-btn" {% if not existing_files %}disabled{% endif %}>Gerar Previews</button>
             
             {% if images and batch_id %}
-                <a href="/download/{{ batch_id }}" class="btn btn-success" style="margin-top: 15px;">Baixar Tudo (ZIP)</a>
+                {% if images|length == 1 %}
+                    <a href="/download/{{ batch_id }}" class="btn btn-success" style="margin-top: 15px;">Baixar Imagem</a>
+                {% else %}
+                    <a href="/download/{{ batch_id }}" class="btn btn-success" style="margin-top: 15px;">Baixar Tudo (ZIP)</a>
+                {% endif %}
             {% endif %}
             
-            <div class="loader" id="loader"></div>
+            <div class="loader-container" id="loader-container" style="display: none; margin-top: 20px; text-align: center;">
+                <div class="loader" id="loader" style="margin: 0 auto 12px auto; display: block;"></div>
+                <div id="loader-text" class="mono-font" style="font-size: 11px; color: var(--eyxo-text-muted); letter-spacing: 0.5px; height: 14px;">Iniciando motor...</div>
+            </div>
         </form>
     </div>
 
@@ -559,7 +567,7 @@
             <div class="empty-state">
                 <img src="/static/eyxo_logo.png" alt="EYXO Logo" style="width: 80px; margin-bottom: 20px;">
                 <h2 style="color: var(--eyxo-text); font-weight: 700; font-size: 24px; margin-bottom: 10px;">Aguardando Imagens</h2>
-                <p style="font-size: 16px; max-width: 300px;">As prévias aparecerão aqui organizadas no formato Bento Grid.</p>
+                <p style="font-size: 16px; max-width: 300px;">As prévias aparecerão aqui.</p>
             </div>
         {% endif %}
     </div>
@@ -582,11 +590,16 @@
         <button class="lightbox-nav lightbox-next" id="lb-next">&#10095;</button>
     </div>
     
-    <div class="mono-font" style="position: fixed; bottom: 20px; right: 25px; font-size: 13px; font-weight: 600; color: var(--eyxo-text-muted); z-index: 100; letter-spacing: 0.5px; user-select: none;">
-        v4.1.0
-    </div>
+    <a href="https://github.com/leomaiadesign/EYXO-KA-COMPRESSOR" target="_blank" class="mono-font" style="position: fixed; bottom: 20px; right: 25px; font-size: 13px; font-weight: 600; color: var(--eyxo-text-muted); z-index: 100; letter-spacing: 0.5px; text-decoration: none; transition: color 0.2s;" onmouseover="this.style.color='#fff'" onmouseout="this.style.color='var(--eyxo-text-muted)'">
+        v4.5.2
+    </a>
 
     <script>
+        // Previne o reenvio do formulário (POST) ao apertar F5, forçando um recomeço limpo (GET)
+        if (window.history.replaceState) {
+            window.history.replaceState(null, null, window.location.href);
+        }
+
         // Upload logic
         const uploadArea = document.getElementById('upload-area');
         const fileInput = document.getElementById('file-input');
@@ -672,7 +685,24 @@
 
         form.addEventListener('submit', () => {
             submitBtn.style.display = 'none';
-            loader.style.display = 'block';
+            document.getElementById('loader-container').style.display = 'block';
+            
+            const steps = [
+                "Lendo pixels originais...",
+                "Iniciando motor de Posterização...",
+                "Reduzindo bits de cor em etapas...",
+                "Testando pesos e limites de KB...",
+                "Preservando canal Alpha...",
+                "Aplicando Dithering nas sombras...",
+                "Calculando compressão ideal...",
+                "Empacotando resultados..."
+            ];
+            let stepIdx = 0;
+            const loaderText = document.getElementById('loader-text');
+            setInterval(() => {
+                loaderText.textContent = steps[stepIdx % steps.length];
+                stepIdx++;
+            }, 700);
         });
 
         // Deletar Imagem
