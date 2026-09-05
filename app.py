@@ -135,6 +135,7 @@ def index():
                     ('quantize', 8)
                 ]
                 
+                best_temp_img = img
                 for strat_type, param in strategies:
                     q_io = io.BytesIO()
                     if strat_type == 'posterize':
@@ -148,11 +149,16 @@ def index():
                         # Fallback seguro: usa FASTOCTREE com dither=1 (Suaviza sombras)
                         temp_img = img.quantize(colors=param, method=Image.Quantize.FASTOCTREE, dither=1)
                             
-                    temp_img.save(q_io, format='PNG', optimize=True)
+                    # Testa o tamanho rapidamente (sem optimize, que é pesado para CPU)
+                    temp_img.save(q_io, format='PNG', compress_level=6)
+                    best_temp_img = temp_img
                     if q_io.tell() <= target_bytes:
-                        best_data = q_io.getvalue()
                         break
-                    best_data = q_io.getvalue()
+                
+                # Aplica a compressão ZLIB pesada apenas 1x na imagem final escolhida
+                final_io = io.BytesIO()
+                best_temp_img.save(final_io, format='PNG', optimize=True)
+                best_data = final_io.getvalue()
             
             with open(comp_path, 'wb') as f:
                 f.write(best_data)

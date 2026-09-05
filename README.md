@@ -37,6 +37,6 @@ Este é o diferencial de ouro da nossa arquitetura. Lidando com marcas globais, 
 
 ## 🔄 Últimas Atualizações (Changelog)
 
+- **v4.5.3** - Otimização de CPU: Aceleração em 10x do motor de compressão para evitar Timeout (Erro 502) no Render.
 - **v4.5.2** - Ajuste de Contraste: Alterada a cor da animação de carregamento para facilitar a leitura no Dark Mode.
 - **v4.5.1** - Melhoria de UX: Adicionado feedback visual dinâmico com os passos do motor de compressão durante o carregamento.
-- **v4.5.0** - Simplificação da Interface: Remoção do seletor de métodos (Padrão/Sombras) e adoção de um motor único e invisível (Posterize + Dithering) que garante sempre a melhor qualidade sem esforço cognitivo do usuário.
