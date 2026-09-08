@@ -37,6 +37,6 @@ Este é o diferencial de ouro da nossa arquitetura. Lidando com marcas globais, 
 
 ## 🔄 Últimas Atualizações (Changelog)
 
+- **v4.6.3** - Correção Crítica (Erro 502): Ajustados os tempos de limite (Timeout) e otimizada a velocidade do `pngquant` e `Pillow` para consumir menos CPU/RAM, evitando quedas no servidor Render.
 - **v4.6.2** - Deploy / Infraestrutura: Adicionado suporte nativo a Docker (`Dockerfile`) para garantir a instalação automática do `pngquant` no servidor de produção (Render).
 - **v4.6.1** - Organização de Projeto: Limpeza estrutural da pasta, remoção de arquivos órfãos, exclusão de scripts de teste antigos e correção no script de limpeza de cache de imagens.
-- **v4.6.0** - Integração com pngquant: Implementada compressão nativa via CLI para qualidade visual idêntica à de ferramentas premium como TinyImage/TinyPNG, preservando detalhes e alfa sem banding.

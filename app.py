@@ -118,20 +118,20 @@ def index():
             bento_classes = calculate_bento_classes(width, height)
             
             img_io = io.BytesIO()
-            img.save(img_io, format='PNG', optimize=True)
+            img.save(img_io, format='PNG', compress_level=6)
             best_data = img_io.getvalue()
             
             if target_bytes > 0 and len(best_data) > target_bytes:
                 pngquant_strategies = [
-                    ['--quality', '80-100', '--speed', '1'],
-                    ['--quality', '60-80', '--speed', '1'],
-                    ['--quality', '40-60', '--speed', '1'],
-                    ['--quality', '20-40', '--speed', '1'],
-                    ['256', '--speed', '1'],
-                    ['128', '--speed', '1'],
-                    ['64', '--speed', '1'],
-                    ['32', '--speed', '1'],
-                    ['16', '--speed', '1']
+                    ['--quality', '80-100', '--speed', '4'],
+                    ['--quality', '60-80', '--speed', '4'],
+                    ['--quality', '40-60', '--speed', '4'],
+                    ['--quality', '20-40', '--speed', '4'],
+                    ['256', '--speed', '4'],
+                    ['128', '--speed', '4'],
+                    ['64', '--speed', '4'],
+                    ['32', '--speed', '4'],
+                    ['16', '--speed', '4']
                 ]
                 
                 success_pngquant = False
