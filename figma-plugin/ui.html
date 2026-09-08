@@ -7,166 +7,257 @@
             --eyxo-blue: #0000FF; 
             --eyxo-bg: #000000;
             --eyxo-surface: #0A0A0A;
+            --eyxo-surface-hover: #141414;
             --eyxo-border: #1F1F1F;
             --eyxo-text: #FFFFFF;
             --eyxo-text-muted: #8F8F8F;
+            --eyxo-font-ui: 'Moderat', 'Helvetica Neue', Helvetica, Arial, sans-serif;
+            --eyxo-font-mono: 'Moderat Mono', 'Courier New', Courier, monospace;
         }
 
         body {
-            font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
+            font-family: var(--eyxo-font-ui);
             background-color: var(--eyxo-bg);
             color: var(--eyxo-text);
             margin: 0;
-            padding: 20px;
+            padding: 24px;
             display: flex;
             flex-direction: column;
-            height: 100%;
+            height: 100vh;
             box-sizing: border-box;
         }
 
-        h2 { font-size: 16px; margin: 0 0 5px 0; font-weight: 600; }
-        p { color: var(--eyxo-text-muted); font-size: 12px; margin-bottom: 20px; }
-
-        .form-group {
-            background: var(--eyxo-surface);
-            border: 1px solid var(--eyxo-border);
-            padding: 15px;
-            border-radius: 8px;
-            margin-bottom: 20px;
-        }
-
-        .form-group label {
-            display: block;
-            font-size: 12px;
-            font-weight: 500;
-            margin-bottom: 8px;
-        }
-
-        input[type="number"] {
-            width: 100%;
-            background: var(--eyxo-bg);
-            border: 1px solid var(--eyxo-border);
-            color: var(--eyxo-text);
-            padding: 10px;
-            border-radius: 6px;
-            box-sizing: border-box;
-            font-size: 14px;
-            outline: none;
-        }
-        input[type="number"]:focus { border-color: var(--eyxo-blue); }
+        h1 { color: var(--eyxo-text); font-size: 20px; font-weight: 700; margin-top: 0; margin-bottom: 5px; letter-spacing: -0.5px; }
+        p { color: var(--eyxo-text-muted); font-size: 14px; margin-bottom: 24px; line-height: 1.5; font-weight: 400; }
 
         .btn {
-            background-color: var(--eyxo-blue);
-            color: white;
-            border: none;
-            padding: 12px;
-            border-radius: 6px;
-            font-size: 14px;
-            font-weight: 600;
-            cursor: pointer;
-            width: 100%;
-            transition: all 0.2s;
+            background-color: var(--eyxo-blue); color: var(--eyxo-text); border: none; padding: 14px; border-radius: 8px;
+            font-size: 13px; font-weight: 700; text-transform: uppercase; letter-spacing: 1px; cursor: pointer;
+            width: 100%; transition: all 0.2s; margin-top: auto;
         }
         .btn:hover { background-color: #0000D1; }
         .btn:disabled { background-color: #333; color: #777; cursor: not-allowed; }
+        .btn-outline { background-color: transparent; border: 1px solid var(--eyxo-border); margin-top: 12px; }
+        .btn-outline:hover { background-color: var(--eyxo-surface); }
 
-        /* Loading State */
-        #loading-screen {
-            display: none;
-            position: fixed;
-            top: 0; left: 0; width: 100%; height: 100%;
-            background: rgba(0,0,0,0.85);
-            backdrop-filter: blur(5px);
-            z-index: 10;
-            flex-direction: column;
-            justify-content: center;
-            align-items: center;
+        .selection-list {
+            display: flex; flex-direction: column; gap: 12px; margin-bottom: 24px;
+            flex: 1; overflow-y: auto; padding-right: 4px;
         }
+        
+        .empty-state {
+            padding: 20px; text-align: center; background: var(--eyxo-surface); border: 1px dashed var(--eyxo-border);
+            border-radius: 8px; color: var(--eyxo-text-muted); font-size: 13px; margin-bottom: 24px;
+        }
+
+        .file-item {
+            background: var(--eyxo-surface); border: 1px solid var(--eyxo-border); border-radius: 8px;
+            padding: 12px; display: flex; align-items: center; gap: 12px; transition: border-color 0.2s;
+        }
+        .file-item:hover { border-color: #333; }
+        
+        input[type="checkbox"] { accent-color: var(--eyxo-blue); width: 16px; height: 16px; cursor: pointer; }
+
+        .file-item-info { display: flex; flex-direction: column; flex: 1; overflow: hidden; }
+        .file-item-name { font-size: 13px; font-weight: 600; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+        .file-item-meta { font-size: 12px; color: var(--eyxo-text-muted); margin-top: 4px; font-family: var(--eyxo-font-mono); }
+        .file-item-meta span { color: #4CAF50; font-weight: 600; }
+
+        .target-input-group {
+            display: flex; align-items: center; background: var(--eyxo-bg); border: 1px solid var(--eyxo-border);
+            border-radius: 6px; padding: 4px 8px; width: 70px;
+        }
+        .target-input-group:focus-within { border-color: var(--eyxo-blue); }
+        .kb-input {
+            background: transparent; border: none; color: var(--eyxo-text); font-family: var(--eyxo-font-mono);
+            font-size: 13px; font-weight: 500; width: 100%; outline: none; text-align: right;
+        }
+        .kb-suffix { color: var(--eyxo-text-muted); font-size: 11px; margin-left: 4px; font-weight: 600; }
+        
+        input[type=number]::-webkit-inner-spin-button, input[type=number]::-webkit-outer-spin-button { -webkit-appearance: none; margin: 0; }
+
+        /* Thumbnails & Lightbox */
+        .file-item-thumb {
+            width: 44px; height: 44px; border-radius: 4px; background: #1a1a1a; object-fit: cover;
+            flex-shrink: 0; cursor: pointer; transition: transform 0.2s;
+        }
+        .file-item-thumb:hover { transform: scale(1.05); }
+
+        #lightbox {
+            display: none; position: fixed; top: 0; left: 0; width: 100%; height: 100%;
+            background: rgba(0,0,0,0.9); z-index: 1000; justify-content: center; align-items: center; cursor: pointer;
+            flex-direction: column;
+        }
+        #lightbox img { max-width: 90%; max-height: 90%; border-radius: 8px; box-shadow: 0 10px 30px rgba(0,0,0,0.5); }
+        #lightbox p { margin-top: 15px; color: #fff; font-size: 12px; }
+
+        #panel-loading { justify-content: center; align-items: center; text-align: center; }
         .loader {
-            border: 3px solid var(--eyxo-border);
-            border-top: 3px solid var(--eyxo-blue);
-            border-radius: 50%;
-            width: 30px;
-            height: 30px;
-            animation: spin 1s linear infinite;
-            margin-bottom: 15px;
+            border: 3px solid var(--eyxo-border); border-top: 3px solid var(--eyxo-blue); border-radius: 50%;
+            width: 30px; height: 30px; animation: spin 1s linear infinite; margin: 0 auto 15px auto;
         }
         @keyframes spin { 100% { transform: rotate(360deg); } }
-        #loading-text { font-size: 12px; color: var(--eyxo-text-muted); }
-        
-        #status-bar {
-            margin-top: 15px;
-            font-size: 11px;
-            color: var(--eyxo-text-muted);
-            text-align: center;
-        }
+
+        ::-webkit-scrollbar { width: 4px; }
+        ::-webkit-scrollbar-thumb { background: var(--eyxo-border); border-radius: 4px; }
+
+        .panel { display: none; flex-direction: column; height: 100%; }
+        .panel.active { display: flex; }
+        #server-status { font-size: 11px; color: var(--eyxo-text-muted); text-align: center; margin-top: 12px; }
     </style>
 </head>
 <body>
 
-    <h2>KA Compressor</h2>
-    <p>Otimização de artes (PNG) com Alpha</p>
+    <div id="panel-setup" class="panel active">
+        <h1>KA Compressor</h1>
+        <p>Selecione os frames da página e defina o limite alvo de KB individualmente.</p>
 
-    <div class="form-group">
-        <label>Limite Alvo (KB):</label>
-        <input type="number" id="target_kb" placeholder="Ex: 200" value="200">
+        <div id="empty-selection" class="empty-state" style="display: none;">
+            Nenhum frame encontrado nesta página.
+        </div>
+        <div id="selection-list" class="selection-list">
+            <div style="text-align:center; padding: 20px; color:#8F8F8F; font-size:13px;">Buscando frames...</div>
+        </div>
+
+        <button id="compress-btn" class="btn" disabled>COMPRIMIR SELEÇÃO</button>
+        <div id="server-status">Acordando servidor...</div>
     </div>
 
-    <button id="compress-btn" class="btn">Comprimir Seleção</button>
-    <div id="status-bar">Acordando servidor...</div>
-
-    <div id="loading-screen">
+    <div id="panel-loading" class="panel">
         <div class="loader"></div>
-        <div id="loading-text">Comprimindo...</div>
+        <div style="font-size: 15px; font-weight: 700;">OTIMIZANDO IMAGENS...</div>
+        <p style="margin-top: 8px;">Conectando com a API EYXO</p>
+    </div>
+
+    <div id="panel-results" class="panel">
+        <h1>Concluído!</h1>
+        <p>Clique nas miniaturas para visualizar o tamanho real.</p>
+
+        <div id="results-list" class="selection-list"></div>
+
+        <button id="download-all-btn" class="btn">BAIXAR ARQUIVOS (ZIP)</button>
+        <button id="back-btn" class="btn btn-outline">OTIMIZAR OUTROS</button>
+    </div>
+
+    <!-- Lightbox -->
+    <div id="lightbox" onclick="this.style.display='none'">
+        <img id="lightbox-img" src="">
+        <p>Clique em qualquer lugar para fechar</p>
     </div>
 
     <script>
         const API_URL = 'https://eyxo-ka-compressor.onrender.com';
+        
+        const panelSetup = document.getElementById('panel-setup');
+        const panelLoading = document.getElementById('panel-loading');
+        const panelResults = document.getElementById('panel-results');
+
+        const emptySelection = document.getElementById('empty-selection');
+        const selectionList = document.getElementById('selection-list');
         const compressBtn = document.getElementById('compress-btn');
-        const statusBar = document.getElementById('status-bar');
-        const loadingScreen = document.getElementById('loading-screen');
-        const loadingText = document.getElementById('loading-text');
+        const serverStatus = document.getElementById('server-status');
+        
+        const resultsList = document.getElementById('results-list');
+        const downloadAllBtn = document.getElementById('download-all-btn');
+        const backBtn = document.getElementById('back-btn');
 
-        // 1. Acordar o servidor invisivelmente
+        let finalImages = [];
+        let objectUrlsToRevoke = [];
+
+        function showPanel(panelId) {
+            document.querySelectorAll('.panel').forEach(p => p.classList.remove('active'));
+            document.getElementById(panelId).classList.add('active');
+        }
+
+        function formatBytes(bytes) {
+            if (bytes === 0) return '0 KB';
+            const k = 1024;
+            return (bytes / k).toFixed(1) + ' KB';
+        }
+        
+        function updateCompressButtonState() {
+            const checkedBoxes = document.querySelectorAll('.frame-checkbox:checked');
+            compressBtn.disabled = checkedBoxes.length === 0;
+            compressBtn.textContent = checkedBoxes.length > 0 ? `COMPRIMIR ${checkedBoxes.length} ITEM(S)` : 'COMPRIMIR SELEÇÃO';
+        }
+
+        function openLightbox(url) {
+            document.getElementById('lightbox-img').src = url;
+            document.getElementById('lightbox').style.display = 'flex';
+        }
+
+        // 1. Acordar servidor
         fetch(`${API_URL}/api/ping`)
-            .then(() => { statusBar.textContent = 'Servidor online e pronto.'; })
-            .catch(() => { statusBar.textContent = 'Servidor offline ou sem rede.'; });
+            .then(() => { serverStatus.textContent = 'Servidor online e pronto.'; })
+            .catch(() => { serverStatus.textContent = 'Servidor offline ou sem rede.'; });
 
-        // 2. Pedir seleção para o Figma
-        compressBtn.onclick = () => {
-            const kb = document.getElementById('target_kb').value;
-            if(!kb) { alert('Defina um limite de KB.'); return; }
-            
-            loadingScreen.style.display = 'flex';
-            loadingText.textContent = 'Lendo arte do Figma...';
-            
-            // Pede pro code.js a imagem
-            parent.postMessage({ pluginMessage: { type: 'get-selection' } }, '*');
-        };
-
-        // 3. Receber do code.js e enviar pra Render
+        // 2. Ouvir mensagens do Figma (Lista inicial e Tamanhos/Thumbnails)
         window.onmessage = async (event) => {
             const msg = event.data.pluginMessage;
             
+            if (msg.type === 'initial-list') {
+                const items = msg.items;
+                if (items.length === 0) {
+                    emptySelection.style.display = 'block';
+                    selectionList.style.display = 'none';
+                    compressBtn.disabled = true;
+                } else {
+                    emptySelection.style.display = 'none';
+                    selectionList.style.display = 'flex';
+                    
+                    selectionList.innerHTML = items.map(item => `
+                        <div class="file-item" id="item-${item.id}">
+                            <input type="checkbox" class="frame-checkbox" value="${item.id}" checked tabindex="-1" onchange="updateCompressButtonState()">
+                            <img id="thumb-${item.id}" class="file-item-thumb" style="display:none;">
+                            <div class="file-item-info">
+                                <div class="file-item-name">${item.name}</div>
+                                <div class="file-item-meta size-label" id="size-${item.id}">Calculando peso...</div>
+                            </div>
+                            <div class="target-input-group">
+                                <input type="number" class="kb-input" id="kb-${item.id}" value="200" min="1" onfocus="this.select()">
+                                <span class="kb-suffix">KB</span>
+                            </div>
+                        </div>
+                    `).join('');
+                    
+                    updateCompressButtonState();
+                }
+            }
+            
+            if (msg.type === 'size-update') {
+                const sizeLabel = document.getElementById(`size-${msg.id}`);
+                const thumbImg = document.getElementById(`thumb-${msg.id}`);
+                
+                if (sizeLabel) sizeLabel.textContent = formatBytes(msg.size);
+                if (thumbImg && msg.thumbBytes) {
+                    const blob = new Blob([msg.thumbBytes], { type: 'image/png' });
+                    const url = URL.createObjectURL(blob);
+                    objectUrlsToRevoke.push(url);
+                    thumbImg.src = url;
+                    thumbImg.style.display = 'block';
+                }
+            }
+            if (msg.type === 'size-error') {
+                const sizeLabel = document.getElementById(`size-${msg.id}`);
+                if (sizeLabel) sizeLabel.textContent = 'Erro ao ler peso';
+            }
+            
             if (msg.type === 'error') {
-                loadingScreen.style.display = 'none';
+                showPanel('panel-setup');
                 alert(msg.message);
-                return;
             }
 
-            if (msg.type === 'selection-ready') {
+            if (msg.type === 'selection-bytes-ready') {
                 const images = msg.images;
-                const kb = document.getElementById('target_kb').value;
-                
-                loadingText.textContent = 'Comprimindo na nuvem...';
+                finalImages = [];
+                resultsList.innerHTML = '';
                 
                 try {
                     for (const img of images) {
-                        // Converte Uint8Array para Blob
-                        const blob = new Blob([img.bytes], { type: 'image/png' });
+                        const originalBlob = new Blob([img.bytes], { type: 'image/png' });
                         const formData = new FormData();
-                        formData.append('image', blob, `${img.name}.png`);
-                        formData.append('target_kb', kb);
+                        formData.append('image', originalBlob, `${img.name}.png`);
+                        formData.append('target_kb', img.target_kb);
                         
                         const response = await fetch(`${API_URL}/api/compress`, {
                             method: 'POST',
@@ -176,25 +267,101 @@
                         if(!response.ok) throw new Error('Falha no servidor');
                         
                         const compressedBlob = await response.blob();
+                        const previewUrl = URL.createObjectURL(compressedBlob);
+                        objectUrlsToRevoke.push(previewUrl);
                         
-                        // Força o download
-                        const downloadUrl = URL.createObjectURL(compressedBlob);
-                        const a = document.createElement('a');
-                        a.href = downloadUrl;
-                        a.download = `[KA]_${img.name}.png`;
-                        a.click();
-                        URL.revokeObjectURL(downloadUrl);
+                        finalImages.push({
+                            name: `[KA]_${img.name}.png`,
+                            blob: compressedBlob
+                        });
+                        
+                        resultsList.innerHTML += `
+                            <div class="file-item">
+                                <img src="${previewUrl}" class="file-item-thumb" onclick="openLightbox('${previewUrl}')" title="Clique para ver tamanho real">
+                                <div class="file-item-info">
+                                    <div class="file-item-name">${img.name}.png</div>
+                                    <div class="file-item-meta">
+                                        <del>${formatBytes(img.original_size)}</del> ➔ <span>${formatBytes(compressedBlob.size)}</span>
+                                    </div>
+                                </div>
+                            </div>
+                        `;
                     }
                     
-                    loadingScreen.style.display = 'none';
-                    statusBar.textContent = 'Processo concluído!';
+                    downloadAllBtn.textContent = finalImages.length === 1 ? 'BAIXAR IMAGEM' : 'BAIXAR ARQUIVOS (ZIP)';
+                    showPanel('panel-results');
                     
                 } catch(e) {
-                    loadingScreen.style.display = 'none';
+                    showPanel('panel-setup');
                     alert('Erro na compressão. Verifique se o servidor está online.');
                     console.error(e);
                 }
             }
+        };
+
+        compressBtn.onclick = () => {
+            const checkedBoxes = document.querySelectorAll('.frame-checkbox:checked');
+            if(checkedBoxes.length === 0) return;
+            
+            const requests = Array.from(checkedBoxes).map(cb => {
+                const id = cb.value;
+                const kbInput = document.getElementById(`kb-${id}`).value;
+                return { id: id, targetKb: kbInput || 200 };
+            });
+            
+            showPanel('panel-loading');
+            parent.postMessage({ pluginMessage: { type: 'compress-selected', requests } }, '*');
+        };
+
+        // Download robusto via /api/zip do Render (Figma CSP blocka script de JSZip e a tag <a> direta pode dar problema)
+        downloadAllBtn.onclick = async () => {
+            downloadAllBtn.textContent = "PREPARANDO DOWNLOAD...";
+            downloadAllBtn.disabled = true;
+
+            try {
+                if (finalImages.length === 1) {
+                    // Download avulso
+                    const downloadUrl = URL.createObjectURL(finalImages[0].blob);
+                    const a = document.createElement('a');
+                    a.href = downloadUrl;
+                    a.download = finalImages[0].name;
+                    document.body.appendChild(a);
+                    a.click();
+                    document.body.removeChild(a);
+                    
+                } else {
+                    // Download em lote via /api/zip
+                    const formData = new FormData();
+                    finalImages.forEach((img, i) => {
+                        formData.append(`file_${i}`, img.blob, img.name);
+                    });
+                    
+                    const response = await fetch(`${API_URL}/api/zip`, {
+                        method: 'POST',
+                        body: formData
+                    });
+                    
+                    const zipBlob = await response.blob();
+                    const downloadUrl = URL.createObjectURL(zipBlob);
+                    const a = document.createElement('a');
+                    a.href = downloadUrl;
+                    a.download = `EYXO_Comprimidas.zip`;
+                    document.body.appendChild(a);
+                    a.click();
+                    document.body.removeChild(a);
+                }
+            } catch (e) {
+                alert("Erro ao baixar. Tente novamente.");
+            } finally {
+                downloadAllBtn.textContent = finalImages.length === 1 ? 'BAIXAR IMAGEM' : 'BAIXAR ARQUIVOS (ZIP)';
+                downloadAllBtn.disabled = false;
+            }
+        };
+
+        backBtn.onclick = () => {
+            showPanel('panel-setup');
+            objectUrlsToRevoke.forEach(url => URL.revokeObjectURL(url));
+            objectUrlsToRevoke = [];
         };
     </script>
 </body>

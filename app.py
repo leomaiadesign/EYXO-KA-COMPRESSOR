@@ -269,6 +269,26 @@ def api_compress():
     except Exception as e:
         return {"error": str(e)}, 500, {'Access-Control-Allow-Origin': '*'}
 
+@app.route('/api/zip', methods=['POST', 'OPTIONS'])
+def api_zip():
+    if request.method == 'OPTIONS':
+        return '', 204, {'Access-Control-Allow-Origin': '*', 'Access-Control-Allow-Methods': 'POST, OPTIONS', 'Access-Control-Allow-Headers': 'Content-Type, multipart/form-data'}
+    
+    memory_file = io.BytesIO()
+    with zipfile.ZipFile(memory_file, 'w', zipfile.ZIP_DEFLATED) as zf:
+        for key, file in request.files.items():
+            zf.writestr(file.filename, file.read())
+            
+    memory_file.seek(0)
+    response = send_file(
+        memory_file,
+        mimetype='application/zip',
+        as_attachment=True,
+        download_name='EYXO_Comprimidas.zip'
+    )
+    response.headers['Access-Control-Allow-Origin'] = '*'
+    return response
+
 @app.route('/download/<batch_id>')
 def download(batch_id):
     if not batch_id:
