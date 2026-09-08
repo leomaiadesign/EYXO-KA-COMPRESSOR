@@ -4,6 +4,7 @@ import zipfile
 import shutil
 import uuid
 import time
+import subprocess
 from flask import Flask, render_template, request, send_file, flash
 from PIL import Image, ImageOps
 from werkzeug.utils import secure_filename
@@ -121,44 +122,76 @@ def index():
             best_data = img_io.getvalue()
             
             if target_bytes > 0 and len(best_data) > target_bytes:
-                strategies = [
-                    ('posterize', 7),
-                    ('posterize', 6),
-                    ('posterize', 5),
-                    ('posterize', 4),
-                    ('posterize', 3),
-                    ('quantize', 256),
-                    ('quantize', 128),
-                    ('quantize', 64),
-                    ('quantize', 32),
-                    ('quantize', 16),
-                    ('quantize', 8)
+                pngquant_strategies = [
+                    ['--quality', '80-100', '--speed', '1'],
+                    ['--quality', '60-80', '--speed', '1'],
+                    ['--quality', '40-60', '--speed', '1'],
+                    ['--quality', '20-40', '--speed', '1'],
+                    ['256', '--speed', '1'],
+                    ['128', '--speed', '1'],
+                    ['64', '--speed', '1'],
+                    ['32', '--speed', '1'],
+                    ['16', '--speed', '1']
                 ]
                 
-                best_temp_img = img
-                for strat_type, param in strategies:
-                    q_io = io.BytesIO()
-                    if strat_type == 'posterize':
-                        r, g, b, a = img.split()
-                        r = ImageOps.posterize(r, param)
-                        g = ImageOps.posterize(g, param)
-                        b = ImageOps.posterize(b, param)
-                        a = ImageOps.posterize(a, param)
-                        temp_img = Image.merge('RGBA', (r, g, b, a))
-                    else:
-                        # Fallback seguro: usa FASTOCTREE com dither=1 (Suaviza sombras)
-                        temp_img = img.quantize(colors=param, method=Image.Quantize.FASTOCTREE, dither=1)
-                            
-                    # Testa o tamanho rapidamente (sem optimize, que é pesado para CPU)
-                    temp_img.save(q_io, format='PNG', compress_level=6)
-                    best_temp_img = temp_img
-                    if q_io.tell() <= target_bytes:
+                success_pngquant = False
+                original_best_data = best_data
+                
+                for params in pngquant_strategies:
+                    try:
+                        cmd = ['pngquant', '--strip'] + params + ['-']
+                        process = subprocess.Popen(
+                            cmd,
+                            stdin=subprocess.PIPE,
+                            stdout=subprocess.PIPE,
+                            stderr=subprocess.PIPE
+                        )
+                        out, err = process.communicate(input=original_best_data)
+                        
+                        if process.returncode == 0:
+                            best_data = out
+                            success_pngquant = True
+                            if len(best_data) <= target_bytes:
+                                break
+                    except Exception:
                         break
                 
-                # Aplica a compressão ZLIB pesada apenas 1x na imagem final escolhida
-                final_io = io.BytesIO()
-                best_temp_img.save(final_io, format='PNG', optimize=True)
-                best_data = final_io.getvalue()
+                if not success_pngquant:
+                    strategies = [
+                        ('posterize', 7),
+                        ('posterize', 6),
+                        ('posterize', 5),
+                        ('posterize', 4),
+                        ('posterize', 3),
+                        ('quantize', 256),
+                        ('quantize', 128),
+                        ('quantize', 64),
+                        ('quantize', 32),
+                        ('quantize', 16),
+                        ('quantize', 8)
+                    ]
+                    
+                    best_temp_img = img
+                    for strat_type, param in strategies:
+                        q_io = io.BytesIO()
+                        if strat_type == 'posterize':
+                            r, g, b, a = img.split()
+                            r = ImageOps.posterize(r, param)
+                            g = ImageOps.posterize(g, param)
+                            b = ImageOps.posterize(b, param)
+                            a = ImageOps.posterize(a, param)
+                            temp_img = Image.merge('RGBA', (r, g, b, a))
+                        else:
+                            temp_img = img.quantize(colors=param, method=Image.Quantize.FASTOCTREE, dither=1)
+                                
+                        temp_img.save(q_io, format='PNG', compress_level=6)
+                        best_temp_img = temp_img
+                        if q_io.tell() <= target_bytes:
+                            break
+                    
+                    final_io = io.BytesIO()
+                    best_temp_img.save(final_io, format='PNG', optimize=True)
+                    best_data = final_io.getvalue()
             
             with open(comp_path, 'wb') as f:
                 f.write(best_data)

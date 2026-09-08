@@ -31,12 +31,12 @@ Este é o diferencial de ouro da nossa arquitetura. Lidando com marcas globais, 
 - **Core / Backend:** Python + Flask
 - **Processamento Gráfico:** Pillow (PIL)
 - **Frontend:** HTML5, CSS3, Vanilla JS
-- **Infraestrutura:** Deploy contínuo (CI/CD) via GitHub + Render
+- **Infraestrutura:** Deploy contínuo via Docker + Render (Garante pacotes de sistema nativos)
 
 ---
 
 ## 🔄 Últimas Atualizações (Changelog)
 
-- **v4.5.3** - Otimização de CPU: Aceleração em 10x do motor de compressão para evitar Timeout (Erro 502) no Render.
-- **v4.5.2** - Ajuste de Contraste: Alterada a cor da animação de carregamento para facilitar a leitura no Dark Mode.
-- **v4.5.1** - Melhoria de UX: Adicionado feedback visual dinâmico com os passos do motor de compressão durante o carregamento.
+- **v4.6.2** - Deploy / Infraestrutura: Adicionado suporte nativo a Docker (`Dockerfile`) para garantir a instalação automática do `pngquant` no servidor de produção (Render).
+- **v4.6.1** - Organização de Projeto: Limpeza estrutural da pasta, remoção de arquivos órfãos, exclusão de scripts de teste antigos e correção no script de limpeza de cache de imagens.
+- **v4.6.0** - Integração com pngquant: Implementada compressão nativa via CLI para qualidade visual idêntica à de ferramentas premium como TinyImage/TinyPNG, preservando detalhes e alfa sem banding.
