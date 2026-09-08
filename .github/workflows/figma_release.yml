@@ -1,0 +1,31 @@
+name: Publicar Plugin do Figma
+
+on:
+  push:
+    branches:
+      - main
+    paths:
+      - 'figma-plugin/**'
+      - '.github/workflows/figma_release.yml'
+
+jobs:
+  release:
+    runs-on: ubuntu-latest
+    permissions:
+      contents: write
+    steps:
+      - name: Checkout do código
+        uses: actions/checkout@v4
+        
+      - name: Zipar pasta do plugin
+        run: zip -r EYXO-KA-Compressor-Figma.zip figma-plugin/
+        
+      - name: Atualizar Release no GitHub
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        run: |
+          # Deleta a release antiga 'latest' (ignora erro se não existir)
+          gh release delete latest --cleanup-tag -y || true
+          
+          # Cria uma nova release 'latest' com o zip
+          gh release create latest EYXO-KA-Compressor-Figma.zip --title "Plugin Figma (Última Versão)" --notes "Versão experimental do plugin para instalar localmente no Figma. Baixe o arquivo zip abaixo, extraia e abra o manifest.json no Figma."

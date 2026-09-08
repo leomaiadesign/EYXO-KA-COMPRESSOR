@@ -1,0 +1,17 @@
+{
+  "name": "EYXO KA Compressor",
+  "id": "1234567890123456789",
+  "api": "1.0.0",
+  "main": "code.js",
+  "ui": "ui.html",
+  "capabilities": [],
+  "enableNetworkAccess": true,
+  "editorType": [
+    "figma"
+  ],
+  "networkAccess": {
+    "allowedDomains": [
+      "https://eyxo-ka-compressor.onrender.com"
+    ]
+  }
+}

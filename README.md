@@ -27,6 +27,18 @@ Este é o diferencial de ouro da nossa arquitetura. Lidando com marcas globais, 
 - **Pré-visualização Inteligente:** Galeria de imagens dispostas em um grid dinâmico que lê e respeita a proporção real de cada arte.
 - **Exportação Ágil:** Ao final do processo, baixe suas imagens empacotadas automaticamente em um `.zip` ou baixe a imagem avulsa com um único clique.
 
+## 🎨 Plugin para Figma (Versão Experimental)
+Agora você pode usar o compressor direto de dentro do Figma sem precisar acessar o site! A compressão é feita pelo nosso servidor, mas tudo acontece na sua tela do Figma.
+
+📥 **[Download do Plugin (.zip)](https://github.com/leomaiadesign/EYXO-KA-COMPRESSOR/releases/download/latest/EYXO-KA-Compressor-Figma.zip)**
+
+**Como instalar no Figma:**
+1. Baixe o arquivo `.zip` acima e extraia no seu computador.
+2. Abra o aplicativo Figma Desktop.
+3. Vá no menu: `Plugins` > `Development` > `Import plugin from manifest...`
+4. Selecione o arquivo `manifest.json` que está dentro da pasta extraída.
+5. Pronto! Basta selecionar uma arte, abrir o plugin e comprimir!
+
 ## 🛠️ Tecnologias Utilizadas
 - **Core / Backend:** Python + Flask
 - **Processamento Gráfico:** Pillow (PIL)
@@ -37,6 +49,6 @@ Este é o diferencial de ouro da nossa arquitetura. Lidando com marcas globais, 
 
 ## 🔄 Últimas Atualizações (Changelog)
 
+- **v4.7.0** - Lançamento Experimental: Criado e disponibilizado o primeiro Plugin nativo para o Figma integrado diretamente à API do compressor. Automação de Release no GitHub configurada via Actions.
 - **v4.6.3** - Correção Crítica (Erro 502): Ajustados os tempos de limite (Timeout) e otimizada a velocidade do `pngquant` e `Pillow` para consumir menos CPU/RAM, evitando quedas no servidor Render.
 - **v4.6.2** - Deploy / Infraestrutura: Adicionado suporte nativo a Docker (`Dockerfile`) para garantir a instalação automática do `pngquant` no servidor de produção (Render).
-- **v4.6.1** - Organização de Projeto: Limpeza estrutural da pasta, remoção de arquivos órfãos, exclusão de scripts de teste antigos e correção no script de limpeza de cache de imagens.

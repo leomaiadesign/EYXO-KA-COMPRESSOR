@@ -44,6 +44,85 @@ def calculate_bento_classes(width, height):
         
     return " ".join(classes)
 
+def compress_image_data(img, target_bytes):
+    img_io = io.BytesIO()
+    img.save(img_io, format='PNG', compress_level=6)
+    best_data = img_io.getvalue()
+    
+    if target_bytes > 0 and len(best_data) > target_bytes:
+        pngquant_strategies = [
+            ['--quality', '80-100', '--speed', '4'],
+            ['--quality', '60-80', '--speed', '4'],
+            ['--quality', '40-60', '--speed', '4'],
+            ['--quality', '20-40', '--speed', '4'],
+            ['256', '--speed', '4'],
+            ['128', '--speed', '4'],
+            ['64', '--speed', '4'],
+            ['32', '--speed', '4'],
+            ['16', '--speed', '4']
+        ]
+        
+        success_pngquant = False
+        original_best_data = best_data
+        
+        for params in pngquant_strategies:
+            try:
+                cmd = ['pngquant', '--strip'] + params + ['-']
+                process = subprocess.Popen(
+                    cmd,
+                    stdin=subprocess.PIPE,
+                    stdout=subprocess.PIPE,
+                    stderr=subprocess.PIPE
+                )
+                out, err = process.communicate(input=original_best_data)
+                
+                if process.returncode == 0:
+                    best_data = out
+                    success_pngquant = True
+                    if len(best_data) <= target_bytes:
+                        break
+            except Exception:
+                break
+        
+        if not success_pngquant:
+            strategies = [
+                ('posterize', 7),
+                ('posterize', 6),
+                ('posterize', 5),
+                ('posterize', 4),
+                ('posterize', 3),
+                ('quantize', 256),
+                ('quantize', 128),
+                ('quantize', 64),
+                ('quantize', 32),
+                ('quantize', 16),
+                ('quantize', 8)
+            ]
+            
+            best_temp_img = img
+            for strat_type, param in strategies:
+                q_io = io.BytesIO()
+                if strat_type == 'posterize':
+                    r, g, b, a = img.split()
+                    r = ImageOps.posterize(r, param)
+                    g = ImageOps.posterize(g, param)
+                    b = ImageOps.posterize(b, param)
+                    a = ImageOps.posterize(a, param)
+                    temp_img = Image.merge('RGBA', (r, g, b, a))
+                else:
+                    temp_img = img.quantize(colors=param, method=Image.Quantize.FASTOCTREE, dither=1)
+                        
+                temp_img.save(q_io, format='PNG', compress_level=6)
+                best_temp_img = temp_img
+                if q_io.tell() <= target_bytes:
+                    break
+            
+            final_io = io.BytesIO()
+            best_temp_img.save(final_io, format='PNG', optimize=True)
+            best_data = final_io.getvalue()
+            
+    return best_data
+
 @app.route('/upload', methods=['POST'])
 def upload_files():
     files = request.files.getlist('images')
@@ -117,81 +196,7 @@ def index():
             width, height = img.size
             bento_classes = calculate_bento_classes(width, height)
             
-            img_io = io.BytesIO()
-            img.save(img_io, format='PNG', compress_level=6)
-            best_data = img_io.getvalue()
-            
-            if target_bytes > 0 and len(best_data) > target_bytes:
-                pngquant_strategies = [
-                    ['--quality', '80-100', '--speed', '4'],
-                    ['--quality', '60-80', '--speed', '4'],
-                    ['--quality', '40-60', '--speed', '4'],
-                    ['--quality', '20-40', '--speed', '4'],
-                    ['256', '--speed', '4'],
-                    ['128', '--speed', '4'],
-                    ['64', '--speed', '4'],
-                    ['32', '--speed', '4'],
-                    ['16', '--speed', '4']
-                ]
-                
-                success_pngquant = False
-                original_best_data = best_data
-                
-                for params in pngquant_strategies:
-                    try:
-                        cmd = ['pngquant', '--strip'] + params + ['-']
-                        process = subprocess.Popen(
-                            cmd,
-                            stdin=subprocess.PIPE,
-                            stdout=subprocess.PIPE,
-                            stderr=subprocess.PIPE
-                        )
-                        out, err = process.communicate(input=original_best_data)
-                        
-                        if process.returncode == 0:
-                            best_data = out
-                            success_pngquant = True
-                            if len(best_data) <= target_bytes:
-                                break
-                    except Exception:
-                        break
-                
-                if not success_pngquant:
-                    strategies = [
-                        ('posterize', 7),
-                        ('posterize', 6),
-                        ('posterize', 5),
-                        ('posterize', 4),
-                        ('posterize', 3),
-                        ('quantize', 256),
-                        ('quantize', 128),
-                        ('quantize', 64),
-                        ('quantize', 32),
-                        ('quantize', 16),
-                        ('quantize', 8)
-                    ]
-                    
-                    best_temp_img = img
-                    for strat_type, param in strategies:
-                        q_io = io.BytesIO()
-                        if strat_type == 'posterize':
-                            r, g, b, a = img.split()
-                            r = ImageOps.posterize(r, param)
-                            g = ImageOps.posterize(g, param)
-                            b = ImageOps.posterize(b, param)
-                            a = ImageOps.posterize(a, param)
-                            temp_img = Image.merge('RGBA', (r, g, b, a))
-                        else:
-                            temp_img = img.quantize(colors=param, method=Image.Quantize.FASTOCTREE, dither=1)
-                                
-                        temp_img.save(q_io, format='PNG', compress_level=6)
-                        best_temp_img = temp_img
-                        if q_io.tell() <= target_bytes:
-                            break
-                    
-                    final_io = io.BytesIO()
-                    best_temp_img.save(final_io, format='PNG', optimize=True)
-                    best_data = final_io.getvalue()
+            best_data = compress_image_data(img, target_bytes)
             
             with open(comp_path, 'wb') as f:
                 f.write(best_data)
@@ -231,6 +236,38 @@ def delete_file(batch_id, safe_name):
         return {"status": "success"}
     except Exception as e:
         return {"status": "error", "message": str(e)}, 500
+
+@app.route('/api/ping', methods=['GET', 'OPTIONS'])
+def api_ping():
+    if request.method == 'OPTIONS':
+        return '', 204, {'Access-Control-Allow-Origin': '*', 'Access-Control-Allow-Methods': 'GET, OPTIONS'}
+    return {"status": "awake"}, 200, {'Access-Control-Allow-Origin': '*'}
+
+@app.route('/api/compress', methods=['POST', 'OPTIONS'])
+def api_compress():
+    if request.method == 'OPTIONS':
+        return '', 204, {'Access-Control-Allow-Origin': '*', 'Access-Control-Allow-Methods': 'POST, OPTIONS', 'Access-Control-Allow-Headers': 'Content-Type, multipart/form-data'}
+    
+    if 'image' not in request.files:
+        return {"error": "Nenhuma imagem enviada."}, 400, {'Access-Control-Allow-Origin': '*'}
+        
+    file = request.files['image']
+    target_kb = request.form.get('target_kb', type=int)
+    if target_kb is None:
+        target_kb = 0
+    target_bytes = target_kb * 1024
+    
+    try:
+        img = Image.open(file).convert("RGBA")
+        best_data = compress_image_data(img, target_bytes)
+        memory_file = io.BytesIO(best_data)
+        memory_file.seek(0)
+        
+        response = send_file(memory_file, mimetype='image/png', as_attachment=True, download_name=file.filename)
+        response.headers['Access-Control-Allow-Origin'] = '*'
+        return response
+    except Exception as e:
+        return {"error": str(e)}, 500, {'Access-Control-Allow-Origin': '*'}
 
 @app.route('/download/<batch_id>')
 def download(batch_id):

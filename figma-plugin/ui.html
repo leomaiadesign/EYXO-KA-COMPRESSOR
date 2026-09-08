@@ -1,0 +1,201 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+    <meta charset="UTF-8">
+    <style>
+        :root {
+            --eyxo-blue: #0000FF; 
+            --eyxo-bg: #000000;
+            --eyxo-surface: #0A0A0A;
+            --eyxo-border: #1F1F1F;
+            --eyxo-text: #FFFFFF;
+            --eyxo-text-muted: #8F8F8F;
+        }
+
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
+            background-color: var(--eyxo-bg);
+            color: var(--eyxo-text);
+            margin: 0;
+            padding: 20px;
+            display: flex;
+            flex-direction: column;
+            height: 100%;
+            box-sizing: border-box;
+        }
+
+        h2 { font-size: 16px; margin: 0 0 5px 0; font-weight: 600; }
+        p { color: var(--eyxo-text-muted); font-size: 12px; margin-bottom: 20px; }
+
+        .form-group {
+            background: var(--eyxo-surface);
+            border: 1px solid var(--eyxo-border);
+            padding: 15px;
+            border-radius: 8px;
+            margin-bottom: 20px;
+        }
+
+        .form-group label {
+            display: block;
+            font-size: 12px;
+            font-weight: 500;
+            margin-bottom: 8px;
+        }
+
+        input[type="number"] {
+            width: 100%;
+            background: var(--eyxo-bg);
+            border: 1px solid var(--eyxo-border);
+            color: var(--eyxo-text);
+            padding: 10px;
+            border-radius: 6px;
+            box-sizing: border-box;
+            font-size: 14px;
+            outline: none;
+        }
+        input[type="number"]:focus { border-color: var(--eyxo-blue); }
+
+        .btn {
+            background-color: var(--eyxo-blue);
+            color: white;
+            border: none;
+            padding: 12px;
+            border-radius: 6px;
+            font-size: 14px;
+            font-weight: 600;
+            cursor: pointer;
+            width: 100%;
+            transition: all 0.2s;
+        }
+        .btn:hover { background-color: #0000D1; }
+        .btn:disabled { background-color: #333; color: #777; cursor: not-allowed; }
+
+        /* Loading State */
+        #loading-screen {
+            display: none;
+            position: fixed;
+            top: 0; left: 0; width: 100%; height: 100%;
+            background: rgba(0,0,0,0.85);
+            backdrop-filter: blur(5px);
+            z-index: 10;
+            flex-direction: column;
+            justify-content: center;
+            align-items: center;
+        }
+        .loader {
+            border: 3px solid var(--eyxo-border);
+            border-top: 3px solid var(--eyxo-blue);
+            border-radius: 50%;
+            width: 30px;
+            height: 30px;
+            animation: spin 1s linear infinite;
+            margin-bottom: 15px;
+        }
+        @keyframes spin { 100% { transform: rotate(360deg); } }
+        #loading-text { font-size: 12px; color: var(--eyxo-text-muted); }
+        
+        #status-bar {
+            margin-top: 15px;
+            font-size: 11px;
+            color: var(--eyxo-text-muted);
+            text-align: center;
+        }
+    </style>
+</head>
+<body>
+
+    <h2>KA Compressor</h2>
+    <p>Otimização de artes (PNG) com Alpha</p>
+
+    <div class="form-group">
+        <label>Limite Alvo (KB):</label>
+        <input type="number" id="target_kb" placeholder="Ex: 200" value="200">
+    </div>
+
+    <button id="compress-btn" class="btn">Comprimir Seleção</button>
+    <div id="status-bar">Acordando servidor...</div>
+
+    <div id="loading-screen">
+        <div class="loader"></div>
+        <div id="loading-text">Comprimindo...</div>
+    </div>
+
+    <script>
+        const API_URL = 'https://eyxo-ka-compressor.onrender.com';
+        const compressBtn = document.getElementById('compress-btn');
+        const statusBar = document.getElementById('status-bar');
+        const loadingScreen = document.getElementById('loading-screen');
+        const loadingText = document.getElementById('loading-text');
+
+        // 1. Acordar o servidor invisivelmente
+        fetch(`${API_URL}/api/ping`)
+            .then(() => { statusBar.textContent = 'Servidor online e pronto.'; })
+            .catch(() => { statusBar.textContent = 'Servidor offline ou sem rede.'; });
+
+        // 2. Pedir seleção para o Figma
+        compressBtn.onclick = () => {
+            const kb = document.getElementById('target_kb').value;
+            if(!kb) { alert('Defina um limite de KB.'); return; }
+            
+            loadingScreen.style.display = 'flex';
+            loadingText.textContent = 'Lendo arte do Figma...';
+            
+            // Pede pro code.js a imagem
+            parent.postMessage({ pluginMessage: { type: 'get-selection' } }, '*');
+        };
+
+        // 3. Receber do code.js e enviar pra Render
+        window.onmessage = async (event) => {
+            const msg = event.data.pluginMessage;
+            
+            if (msg.type === 'error') {
+                loadingScreen.style.display = 'none';
+                alert(msg.message);
+                return;
+            }
+
+            if (msg.type === 'selection-ready') {
+                const images = msg.images;
+                const kb = document.getElementById('target_kb').value;
+                
+                loadingText.textContent = 'Comprimindo na nuvem...';
+                
+                try {
+                    for (const img of images) {
+                        // Converte Uint8Array para Blob
+                        const blob = new Blob([img.bytes], { type: 'image/png' });
+                        const formData = new FormData();
+                        formData.append('image', blob, `${img.name}.png`);
+                        formData.append('target_kb', kb);
+                        
+                        const response = await fetch(`${API_URL}/api/compress`, {
+                            method: 'POST',
+                            body: formData
+                        });
+                        
+                        if(!response.ok) throw new Error('Falha no servidor');
+                        
+                        const compressedBlob = await response.blob();
+                        
+                        // Força o download
+                        const downloadUrl = URL.createObjectURL(compressedBlob);
+                        const a = document.createElement('a');
+                        a.href = downloadUrl;
+                        a.download = `[KA]_${img.name}.png`;
+                        a.click();
+                        URL.revokeObjectURL(downloadUrl);
+                    }
+                    
+                    loadingScreen.style.display = 'none';
+                    statusBar.textContent = 'Processo concluído!';
+                    
+                } catch(e) {
+                    loadingScreen.style.display = 'none';
+                    alert('Erro na compressão. Verifique se o servidor está online.');
+                    console.error(e);
+                }
+            }
+        };
+    </script>
+</body>
+</html>
