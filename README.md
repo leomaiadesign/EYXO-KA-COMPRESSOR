@@ -49,6 +49,6 @@ Agora você pode usar o compressor direto de dentro do Figma sem precisar acessa
 
 ## 🔄 Últimas Atualizações (Changelog)
 
+- **v4.8.0** - Download Híbrido: O plugin do Figma agora permite exportar arquivos originais não marcados junto com os arquivos otimizados em um único `.zip`.
 - **v4.7.0** - Lançamento Experimental: Criado e disponibilizado o primeiro Plugin nativo para o Figma integrado diretamente à API do compressor. Automação de Release no GitHub configurada via Actions.
 - **v4.6.3** - Correção Crítica (Erro 502): Ajustados os tempos de limite (Timeout) e otimizada a velocidade do `pngquant` e `Pillow` para consumir menos CPU/RAM, evitando quedas no servidor Render.
-- **v4.6.2** - Deploy / Infraestrutura: Adicionado suporte nativo a Docker (`Dockerfile`) para garantir a instalação automática do `pngquant` no servidor de produção (Render).

@@ -1,13 +1,11 @@
 figma.showUI(__html__, { width: 400, height: 600 });
 
-// Pega todos os frames exportáveis da página (Frames, Componentes, Instâncias)
 function getExportableFrames() {
   return figma.currentPage.children.filter(node => 
     node.type === 'FRAME' || node.type === 'COMPONENT' || node.type === 'INSTANCE'
   );
 }
 
-// 1. Enviar lista inicial imediatamente para a UI
 const frames = getExportableFrames();
 const initialList = frames.map(node => ({
   id: node.id,
@@ -15,14 +13,10 @@ const initialList = frames.map(node => ({
 }));
 figma.ui.postMessage({ type: 'initial-list', items: initialList });
 
-// 2. Exportar silenciosamente para descobrir os tamanhos (KB) e gerar thumbnails
 async function calculateSizes() {
   for (const node of frames) {
     try {
-      // Exporta em tamanho real apenas para ver o peso, mas não devolve pra UI (pesado)
       const fullBytes = await node.exportAsync({ format: 'PNG' });
-      
-      // Exporta uma miniatura rápida (scale 0.1 ou largura fixa de 100) para mostrar na tela inicial
       const thumbBytes = await node.exportAsync({ format: 'PNG', constraint: { type: 'SCALE', value: 0.1 } });
       
       figma.ui.postMessage({ 
@@ -39,41 +33,59 @@ async function calculateSizes() {
   }
 }
 
-// Inicia o cálculo de peso invisivelmente
 calculateSizes();
 
-// 3. Ouve as requisições da UI
 figma.ui.onmessage = async (msg) => {
   if (msg.type === 'compress-selected') {
-    const selectedRequests = msg.requests; // Array de { id, targetKb }
+    const toCompressReqs = msg.toCompress || [];
+    const toKeepReqs = msg.toKeep || [];
     
-    if (selectedRequests.length === 0) {
-      figma.ui.postMessage({ type: 'error', message: 'Nenhuma arte marcada.' });
+    if (toCompressReqs.length === 0) {
+      figma.ui.postMessage({ type: 'error', message: 'Nenhuma arte marcada para comprimir.' });
       return;
     }
     
-    const images = [];
+    const compressedImages = [];
+    const originalImages = [];
     
-    for (const req of selectedRequests) {
+    // Processar os que vão ser comprimidos
+    for (const req of toCompressReqs) {
       const node = figma.getNodeById(req.id);
       if (node) {
         try {
           const bytes = await node.exportAsync({ format: 'PNG' });
-          images.push({
+          compressedImages.push({
             id: node.id,
             name: node.name.replace(/[^a-z0-9]/gi, '_').toLowerCase(),
             bytes: bytes,
             original_size: bytes.length,
             target_kb: req.targetKb
           });
-        } catch (e) {
-          figma.ui.postMessage({ type: 'error', message: `Erro ao processar a arte ${node.name}.` });
-          return;
-        }
+        } catch (e) {}
       }
     }
     
-    figma.ui.postMessage({ type: 'selection-bytes-ready', images: images });
+    // Processar os que vão ser mantidos intactos (não marcados)
+    for (const req of toKeepReqs) {
+      const node = figma.getNodeById(req.id);
+      if (node) {
+        try {
+          const bytes = await node.exportAsync({ format: 'PNG' });
+          originalImages.push({
+            id: node.id,
+            name: node.name.replace(/[^a-z0-9]/gi, '_').toLowerCase(),
+            bytes: bytes,
+            original_size: bytes.length
+          });
+        } catch (e) {}
+      }
+    }
+    
+    figma.ui.postMessage({ 
+        type: 'selection-bytes-ready', 
+        compressedImages: compressedImages,
+        originalImages: originalImages
+    });
   }
 
   if (msg.type === 'cancel') {
