@@ -49,6 +49,6 @@ Agora você pode usar o compressor direto de dentro do Figma sem precisar acessa
 
 ## 🔄 Últimas Atualizações (Changelog)
 
-- **v4.9.1** - Qualidade Visual: Binary alpha threshold aplicado antes da quantização. Elimina anti-aliasing do Figma que poluía a paleta de cores, produzindo resultados visuais equivalentes ao TinyPNG.
-- **v4.9.0** - Performance & Estabilidade: Algoritmo de compressão inteligente (pula direto para estratégia adequada ao % de redução), timeout de 20s no subprocess do servidor, AbortController de 60s + progresso por imagem no plugin Figma, e keep-alive via GitHub Actions para eliminar cold start.
-- **v4.8.2** - Correção de ZIP: Adicionada lógica de desduplicação (`_01`, `_02`) para evitar que arquivos com o mesmo nome se sobrescrevam ao gerar pacotes `.zip`.
+- **v4.9.2** - Correção crítica de qualidade: snap de alpha aplicado APÓS o pngquant (não antes). pngquant agora recebe o RGBA completo para seleção ótima de cores, depois o alpha da paleta é binarizado — idêntico ao fluxo do TinyPNG.
+- **v4.9.1** - [Revertido] Binary alpha pré-pngquant causava posterização severa ao degradar a seleção de cores.
+- **v4.9.0** - Performance & Estabilidade: Algoritmo inteligente de compressão, timeout no servidor, AbortController no plugin e keep-alive via GitHub Actions.

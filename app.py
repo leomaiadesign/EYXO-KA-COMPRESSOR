@@ -75,18 +75,28 @@ def get_pil_start_index(original_bytes, target_bytes):
     else:
         return 8  # Começa em quantize 32
 
-def apply_binary_alpha(img):
-    """Snapa pixels semi-transparentes para 0 (invisível) ou 255 (opaco).
-    Elimina o anti-aliasing do Figma que polui a paleta de cores no pngquant.
-    Mesmo comportamento do TinyPNG."""
-    r, g, b, a = img.split()
-    a_bytes = a.tobytes()
-    a_binary = bytes(255 if v >= 128 else 0 for v in a_bytes)
-    a_clean = Image.frombytes('L', a.size, a_binary)
-    return Image.merge('RGBA', (r, g, b, a_clean))
+def snap_palette_alpha(png_bytes):
+    """Snapa o alpha da PALETA para 0 ou 255 após o pngquant.
+    Preserva a seleção de cores do libimagequant e elimina pixels semi-transparentes.
+    Mesma abordagem do TinyPNG: quantiza com info completa, limpa alpha depois."""
+    try:
+        img = Image.open(io.BytesIO(png_bytes))
+        if img.mode != 'P' or 'transparency' not in img.info:
+            return png_bytes
+        trans = img.info['transparency']
+        if isinstance(trans, bytes):
+            new_trans = bytes(255 if v >= 128 else 0 for v in trans)
+        elif isinstance(trans, int):
+            new_trans = 0
+        else:
+            return png_bytes
+        out = io.BytesIO()
+        img.save(out, format='PNG', transparency=new_trans)
+        return out.getvalue()
+    except Exception:
+        return png_bytes
 
 def compress_image_data(img, target_bytes):
-    img = apply_binary_alpha(img)
     img_io = io.BytesIO()
     img.save(img_io, format='PNG', compress_level=6)
     best_data = img_io.getvalue()
@@ -121,7 +131,7 @@ def compress_image_data(img, target_bytes):
                 out, err = process.communicate(input=original_best_data, timeout=20)
                 
                 if process.returncode == 0:
-                    best_data = out
+                    best_data = snap_palette_alpha(out)
                     success_pngquant = True
                     if len(best_data) <= target_bytes:
                         break
@@ -168,7 +178,7 @@ def compress_image_data(img, target_bytes):
             
             final_io = io.BytesIO()
             best_temp_img.save(final_io, format='PNG', optimize=True)
-            best_data = final_io.getvalue()
+            best_data = snap_palette_alpha(final_io.getvalue())
             
     return best_data
 
