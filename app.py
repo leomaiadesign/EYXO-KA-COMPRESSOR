@@ -1,5 +1,6 @@
 import os
 import io
+import re
 import zipfile
 import shutil
 import uuid
@@ -46,21 +47,20 @@ def calculate_bento_classes(width, height):
 
 def get_pngquant_start_index(original_bytes, target_bytes):
     """Calcula o índice de início das estratégias pngquant baseado no percentual
-    de redução necessário. Nunca começa mais agressivo que 128 colors (idx 5)
-    para preservar qualidade visual e usar o budget de KB da melhor forma."""
+    de redução necessário. Evita tentativas leves que claramente não atingem o alvo."""
     if target_bytes <= 0 or original_bytes <= 0:
         return 0
     ratio = target_bytes / original_bytes
-    if ratio > 0.70:   # Redução < 30%: começa em quality 80-100
+    if ratio > 0.70:   # Redução < 30%: quality alta
         return 0
-    elif ratio > 0.50: # Redução 30–50%: começa em quality 40-60
+    elif ratio > 0.50: # Redução 30–50%: quality média
         return 2
-    elif ratio > 0.35: # Redução 50–65%: começa em 256 colors
+    elif ratio > 0.35: # Redução 50–65%: paleta grande
         return 4
-    elif ratio > 0.20: # Redução 65–80%: começa em 256 colors
-        return 4
-    else:              # Redução > 80%: começa em 128 colors (não 32!)
-        return 5
+    elif ratio > 0.20: # Redução 65–80%: paleta média
+        return 6
+    else:              # Redução > 80%: paleta agressiva (ex: 1.5MB → 200KB)
+        return 7
 
 def get_pil_start_index(original_bytes, target_bytes):
     """Calcula o índice de início do fallback PIL com o mesmo princípio."""
