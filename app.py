@@ -202,8 +202,13 @@ def index():
                 f.write(best_data)
             comp_size_kb = get_file_size_kb(comp_path)
             
+            # Lógica de Nomenclatura Inteligente visual (UI)
+            display_name = original_filename
+            if re.match(r'^\d+', display_name):
+                display_name = re.sub(r'^\d+(_?)', f"{round(comp_size_kb)}\\1", display_name)
+            
             processed_images.append({
-                'name': original_filename,
+                'name': display_name,
                 'safe_name': safe_name,
                 'url': f'/static/temp/{batch_id}/comp_{safe_name}?t={os.path.getmtime(comp_path)}',
                 'orig_size': orig_size_kb,
@@ -308,6 +313,12 @@ def download(batch_id):
         file_path = os.path.join(batch_path, single_file)
         parts = single_file.split('_', 2)
         clean_name = parts[2] if len(parts) >= 3 else single_file
+        
+        # Lógica de Nomenclatura Inteligente
+        size_kb = round(os.path.getsize(file_path) / 1024)
+        if re.match(r'^\d+', clean_name):
+            clean_name = re.sub(r'^\d+(_?)', f"{size_kb}\\1", clean_name)
+            
         return send_file(
             file_path,
             as_attachment=True,
@@ -321,6 +332,8 @@ def download(batch_id):
     parts = first_file.split('_', 2)
     clean_name = parts[2] if len(parts) >= 3 else first_file
     zip_basename = clean_name.split('_')[0]
+    if not zip_basename:
+        zip_basename = "imagens"
     
     final_zip_name = f"{zip_basename}_comprimido.zip"
     
@@ -329,6 +342,12 @@ def download(batch_id):
             file_path = os.path.join(batch_path, filename)
             parts = filename.split('_', 2)
             clean_name = parts[2] if len(parts) >= 3 else filename
+            
+            # Lógica de Nomenclatura Inteligente para o ZIP
+            size_kb = round(os.path.getsize(file_path) / 1024)
+            if re.match(r'^\d+', clean_name):
+                clean_name = re.sub(r'^\d+(_?)', f"{size_kb}\\1", clean_name)
+                
             zf.write(file_path, clean_name)
                 
     memory_file.seek(0)

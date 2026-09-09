@@ -305,8 +305,15 @@
                         const previewUrl = URL.createObjectURL(compressedBlob);
                         objectUrlsToRevoke.push(previewUrl);
                         
+                        const kbSize = Math.round(compressedBlob.size / 1024);
+                        // Substitui números iniciais pelo novo peso, ou mantém o nome caso não tenha números
+                        let finalName = `${img.name}.png`;
+                        if (/^\d+/.test(img.name)) {
+                            finalName = `${img.name}.png`.replace(/^\d+(_?)/, `${kbSize}_`);
+                        }
+                        
                         finalImages.push({
-                            name: `[KA]_${img.name}.png`,
+                            name: finalName,
                             blob: compressedBlob
                         });
                         
@@ -314,7 +321,7 @@
                             <div class="file-item">
                                 <img src="${previewUrl}" class="file-item-thumb" onclick="openLightbox('${previewUrl}')" title="Clique para ver tamanho real">
                                 <div class="file-item-info">
-                                    <div class="file-item-name">${img.name}.png</div>
+                                    <div class="file-item-name">${finalName}</div>
                                     <div class="file-item-meta">
                                         <del>${formatBytes(img.original_size)}</del> ➔ <span>${formatBytes(compressedBlob.size)}</span>
                                     </div>
