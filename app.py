@@ -75,7 +75,18 @@ def get_pil_start_index(original_bytes, target_bytes):
     else:
         return 8  # Começa em quantize 32
 
+def apply_binary_alpha(img):
+    """Snapa pixels semi-transparentes para 0 (invisível) ou 255 (opaco).
+    Elimina o anti-aliasing do Figma que polui a paleta de cores no pngquant.
+    Mesmo comportamento do TinyPNG."""
+    r, g, b, a = img.split()
+    a_bytes = a.tobytes()
+    a_binary = bytes(255 if v >= 128 else 0 for v in a_bytes)
+    a_clean = Image.frombytes('L', a.size, a_binary)
+    return Image.merge('RGBA', (r, g, b, a_clean))
+
 def compress_image_data(img, target_bytes):
+    img = apply_binary_alpha(img)
     img_io = io.BytesIO()
     img.save(img_io, format='PNG', compress_level=6)
     best_data = img_io.getvalue()
