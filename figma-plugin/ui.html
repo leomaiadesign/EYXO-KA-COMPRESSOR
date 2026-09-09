@@ -131,7 +131,7 @@
     <div id="panel-loading" class="panel">
         <div class="loader"></div>
         <div style="font-size: 15px; font-weight: 700;">OTIMIZANDO IMAGENS...</div>
-        <p style="margin-top: 8px;">Conectando com a API EYXO</p>
+        <p id="loading-progress" style="margin-top: 8px; font-size: 12px; font-family: var(--eyxo-font-mono);">Preparando...</p>
     </div>
 
     <div id="panel-results" class="panel">
@@ -287,26 +287,56 @@
                 }
 
                 // 2. Processar os COMPRIMIDOS (Marcados)
+                const loadingProgress = document.getElementById('loading-progress');
+                const total = msg.compressedImages.length;
+                
                 try {
-                    for (const img of msg.compressedImages) {
+                    for (let i = 0; i < msg.compressedImages.length; i++) {
+                        const img = msg.compressedImages[i];
+                        
+                        // Atualiza o texto de progresso
+                        if (loadingProgress) {
+                            loadingProgress.textContent = `${i + 1}/${total}: ${img.name}.png`;
+                        }
+                        
                         const originalBlob = new Blob([img.bytes], { type: 'image/png' });
                         const formData = new FormData();
                         formData.append('image', originalBlob, `${img.name}.png`);
                         formData.append('target_kb', img.target_kb);
                         
-                        const response = await fetch(`${API_URL}/api/compress`, {
-                            method: 'POST',
-                            body: formData
-                        });
+                        // AbortController: cancela o fetch após 60 segundos
+                        const controller = new AbortController();
+                        const timeoutId = setTimeout(() => controller.abort(), 60000);
                         
-                        if(!response.ok) throw new Error('Falha no servidor');
+                        let response;
+                        try {
+                            response = await fetch(`${API_URL}/api/compress`, {
+                                method: 'POST',
+                                body: formData,
+                                signal: controller.signal
+                            });
+                            clearTimeout(timeoutId);
+                        } catch (fetchErr) {
+                            clearTimeout(timeoutId);
+                            if (fetchErr.name === 'AbortError') {
+                                showPanel('panel-setup');
+                                alert(`Timeout: "${img.name}.png" demorou mais de 60s.\nTente um alvo de KB maior ou verifique a conexão.`);
+                                return;
+                            }
+                            throw fetchErr;
+                        }
+                        
+                        if (!response.ok) {
+                            showPanel('panel-setup');
+                            alert(`Erro no servidor ao processar "${img.name}.png" (${response.status}).\nVerifique se o servidor está online.`);
+                            return;
+                        }
                         
                         const compressedBlob = await response.blob();
                         const previewUrl = URL.createObjectURL(compressedBlob);
                         objectUrlsToRevoke.push(previewUrl);
                         
                         const kbSize = Math.round(compressedBlob.size / 1024);
-                        // Substitui números iniciais pelo novo peso, ou mantém o nome caso não tenha números
                         let finalName = `${img.name}.png`;
                         if (/^\d+/.test(img.name)) {
                             finalName = `${img.name}.png`.replace(/^\d+(_?)/, `${kbSize}_`);

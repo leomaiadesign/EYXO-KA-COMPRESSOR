@@ -49,7 +49,6 @@ Agora você pode usar o compressor direto de dentro do Figma sem precisar acessa
 
 ## 🔄 Últimas Atualizações (Changelog)
 
+- **v4.9.0** - Performance & Estabilidade: Algoritmo de compressão inteligente (pula direto para estratégia adequada ao % de redução), timeout de 20s no subprocess do servidor, AbortController de 60s + progresso por imagem no plugin Figma, e keep-alive via GitHub Actions para eliminar cold start.
+- **v4.8.2** - Correção de ZIP: Adicionada lógica de desduplicação (`_01`, `_02`) para evitar que arquivos com o mesmo nome se sobrescrevam ao gerar pacotes `.zip`.
 - **v4.8.1** - Nomenclatura Inteligente: O plugin agora remove o prefixo `[KA]_` e ajusta automaticamente o peso inicial do nome do arquivo para refletir o peso real atingido (ex: `200_nome.png` -> `121_nome.png`).
-- **v4.8.0** - Download Híbrido: O plugin do Figma agora permite exportar arquivos originais não marcados junto com os arquivos otimizados em um único `.zip`.
-- **v4.7.0** - Lançamento Experimental: Criado e disponibilizado o primeiro Plugin nativo para o Figma integrado diretamente à API do compressor. Automação de Release no GitHub configurada via Actions.
-- **v4.6.3** - Correção Crítica (Erro 502): Ajustados os tempos de limite (Timeout) e otimizada a velocidade do `pngquant` e `Pillow` para consumir menos CPU/RAM, evitando quedas no servidor Render.

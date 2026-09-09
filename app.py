@@ -44,6 +44,37 @@ def calculate_bento_classes(width, height):
         
     return " ".join(classes)
 
+def get_pngquant_start_index(original_bytes, target_bytes):
+    """Calcula o índice de início das estratégias pngquant baseado no percentual
+    de redução necessário. Evita tentativas leves que claramente não atingem o alvo."""
+    if target_bytes <= 0 or original_bytes <= 0:
+        return 0
+    ratio = target_bytes / original_bytes
+    if ratio > 0.70:   # Redução < 30%: quality alta
+        return 0
+    elif ratio > 0.50: # Redução 30–50%: quality média
+        return 2
+    elif ratio > 0.35: # Redução 50–65%: paleta grande
+        return 4
+    elif ratio > 0.20: # Redução 65–80%: paleta média
+        return 6
+    else:              # Redução > 80%: paleta agressiva (ex: 1.5MB → 200KB)
+        return 7
+
+def get_pil_start_index(original_bytes, target_bytes):
+    """Calcula o índice de início do fallback PIL com o mesmo princípio."""
+    if target_bytes <= 0 or original_bytes <= 0:
+        return 0
+    ratio = target_bytes / original_bytes
+    if ratio > 0.50:
+        return 0
+    elif ratio > 0.35:
+        return 5  # Começa em quantize 256
+    elif ratio > 0.20:
+        return 7  # Começa em quantize 64
+    else:
+        return 8  # Começa em quantize 32
+
 def compress_image_data(img, target_bytes):
     img_io = io.BytesIO()
     img.save(img_io, format='PNG', compress_level=6)
@@ -62,10 +93,12 @@ def compress_image_data(img, target_bytes):
             ['16', '--speed', '4']
         ]
         
+        start_idx = get_pngquant_start_index(len(best_data), target_bytes)
+        
         success_pngquant = False
         original_best_data = best_data
         
-        for params in pngquant_strategies:
+        for params in pngquant_strategies[start_idx:]:
             try:
                 cmd = ['pngquant', '--strip'] + params + ['-']
                 process = subprocess.Popen(
@@ -74,13 +107,16 @@ def compress_image_data(img, target_bytes):
                     stdout=subprocess.PIPE,
                     stderr=subprocess.PIPE
                 )
-                out, err = process.communicate(input=original_best_data)
+                out, err = process.communicate(input=original_best_data, timeout=20)
                 
                 if process.returncode == 0:
                     best_data = out
                     success_pngquant = True
                     if len(best_data) <= target_bytes:
                         break
+            except subprocess.TimeoutExpired:
+                process.kill()
+                break
             except Exception:
                 break
         
@@ -99,8 +135,10 @@ def compress_image_data(img, target_bytes):
                 ('quantize', 8)
             ]
             
+            pil_start = get_pil_start_index(len(original_best_data), target_bytes)
+            
             best_temp_img = img
-            for strat_type, param in strategies:
+            for strat_type, param in strategies[pil_start:]:
                 q_io = io.BytesIO()
                 if strat_type == 'posterize':
                     r, g, b, a = img.split()
@@ -274,15 +312,27 @@ def api_compress():
     except Exception as e:
         return {"error": str(e)}, 500, {'Access-Control-Allow-Origin': '*'}
 
+def make_unique_filename(filename, seen_set):
+    name, ext = os.path.splitext(filename)
+    counter = 1
+    new_name = filename
+    while new_name in seen_set:
+        new_name = f"{name}_{counter:02d}{ext}"
+        counter += 1
+    seen_set.add(new_name)
+    return new_name
+
 @app.route('/api/zip', methods=['POST', 'OPTIONS'])
 def api_zip():
     if request.method == 'OPTIONS':
         return '', 204, {'Access-Control-Allow-Origin': '*', 'Access-Control-Allow-Methods': 'POST, OPTIONS', 'Access-Control-Allow-Headers': 'Content-Type, multipart/form-data'}
     
     memory_file = io.BytesIO()
+    seen_names = set()
     with zipfile.ZipFile(memory_file, 'w', zipfile.ZIP_DEFLATED) as zf:
         for key, file in request.files.items():
-            zf.writestr(file.filename, file.read())
+            unique_name = make_unique_filename(file.filename, seen_names)
+            zf.writestr(unique_name, file.read())
             
     memory_file.seek(0)
     response = send_file(
@@ -337,6 +387,7 @@ def download(batch_id):
     
     final_zip_name = f"{zip_basename}_comprimido.zip"
     
+    seen_names = set()
     with zipfile.ZipFile(memory_file, 'w', zipfile.ZIP_DEFLATED) as zf:
         for filename in comp_files:
             file_path = os.path.join(batch_path, filename)
@@ -348,7 +399,8 @@ def download(batch_id):
             if re.match(r'^\d+', clean_name):
                 clean_name = re.sub(r'^\d+(_?)', f"{size_kb}\\1", clean_name)
                 
-            zf.write(file_path, clean_name)
+            unique_name = make_unique_filename(clean_name, seen_names)
+            zf.write(file_path, unique_name)
                 
     memory_file.seek(0)
     return send_file(
