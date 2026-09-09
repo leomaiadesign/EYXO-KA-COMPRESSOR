@@ -63,14 +63,14 @@
         input[type="checkbox"] { accent-color: var(--eyxo-blue); width: 16px; height: 16px; cursor: pointer; }
 
         .file-item-info { display: flex; flex-direction: column; flex: 1; overflow: hidden; }
-        .file-item-name { font-size: 13px; font-weight: 600; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+        .file-item-name { font-size: 13px; font-weight: 600; white-space: normal; word-break: break-word; line-height: 1.3; }
         .file-item-meta { font-size: 12px; color: var(--eyxo-text-muted); margin-top: 4px; font-family: var(--eyxo-font-mono); }
         .file-item-meta span { color: #4CAF50; font-weight: 600; }
         .file-item-meta .badge-original { color: #888; font-weight: 500; font-family: var(--eyxo-font-ui); font-size: 10px; padding: 2px 4px; background: #222; border-radius: 4px; }
 
         .target-input-group {
             display: flex; align-items: center; background: var(--eyxo-bg); border: 1px solid var(--eyxo-border);
-            border-radius: 6px; padding: 4px 8px; width: 70px;
+            border-radius: 6px; padding: 4px 8px; width: 70px; flex-shrink: 0;
         }
         .target-input-group:focus-within { border-color: var(--eyxo-blue); }
         .kb-input {
@@ -84,7 +84,7 @@
         /* Thumbnails & Lightbox */
         .file-item-thumb {
             width: 44px; height: 44px; border-radius: 4px; background: #1a1a1a; object-fit: cover;
-            flex-shrink: 0; cursor: pointer; transition: transform 0.2s;
+            flex-shrink: 0; cursor: pointer; transition: transform 0.2s; align-self: flex-start;
         }
         .file-item-thumb:hover { transform: scale(1.05); }
 
@@ -109,6 +109,18 @@
         .panel { display: none; flex-direction: column; height: 100%; }
         .panel.active { display: flex; }
         #server-status { font-size: 11px; color: var(--eyxo-text-muted); text-align: center; margin-top: 12px; }
+
+        .selection-controls {
+            display: none; justify-content: flex-end; gap: 6px; margin-bottom: 10px; flex-shrink: 0;
+        }
+        .selection-controls.visible { display: flex; }
+        .sel-btn {
+            background: transparent; border: 1px solid var(--eyxo-border); color: var(--eyxo-text-muted);
+            border-radius: 5px; padding: 4px 9px; font-size: 10px; font-weight: 600;
+            text-transform: uppercase; letter-spacing: 0.5px; cursor: pointer; transition: all 0.15s;
+            font-family: var(--eyxo-font-ui);
+        }
+        .sel-btn:hover { border-color: #555; color: var(--eyxo-text); background: var(--eyxo-surface); }
     </style>
 </head>
 <body>
@@ -120,6 +132,13 @@
         <div id="empty-selection" class="empty-state" style="display: none;">
             Nenhum frame encontrado nesta página.
         </div>
+
+        <div id="selection-controls" class="selection-controls">
+            <button class="sel-btn" id="btn-select-all">Marcar todas</button>
+            <button class="sel-btn" id="btn-deselect-all">Desmarcar</button>
+            <button class="sel-btn" id="btn-invert">Inverter</button>
+        </div>
+
         <div id="selection-list" class="selection-list">
             <div style="text-align:center; padding: 20px; color:#8F8F8F; font-size:13px;">Buscando frames...</div>
         </div>
@@ -162,6 +181,7 @@
 
         const emptySelection = document.getElementById('empty-selection');
         const selectionList = document.getElementById('selection-list');
+        const selectionControls = document.getElementById('selection-controls');
         const compressBtn = document.getElementById('compress-btn');
         const serverStatus = document.getElementById('server-status');
         
@@ -196,6 +216,19 @@
             document.getElementById('lightbox').style.display = 'flex';
         }
 
+        document.getElementById('btn-select-all').onclick = () => {
+            document.querySelectorAll('.frame-checkbox').forEach(cb => cb.checked = true);
+            updateCompressButtonState();
+        };
+        document.getElementById('btn-deselect-all').onclick = () => {
+            document.querySelectorAll('.frame-checkbox').forEach(cb => cb.checked = false);
+            updateCompressButtonState();
+        };
+        document.getElementById('btn-invert').onclick = () => {
+            document.querySelectorAll('.frame-checkbox').forEach(cb => cb.checked = !cb.checked);
+            updateCompressButtonState();
+        };
+
         fetch(`${API_URL}/api/ping`)
             .then(() => { serverStatus.textContent = 'Servidor online e pronto.'; })
             .catch(() => { serverStatus.textContent = 'Servidor offline ou sem rede.'; });
@@ -208,10 +241,12 @@
                 if (items.length === 0) {
                     emptySelection.style.display = 'block';
                     selectionList.style.display = 'none';
+                    selectionControls.classList.remove('visible');
                     compressBtn.disabled = true;
                 } else {
                     emptySelection.style.display = 'none';
                     selectionList.style.display = 'flex';
+                    selectionControls.classList.add('visible');
                     
                     selectionList.innerHTML = items.map(item => `
                         <div class="file-item" id="item-${item.id}">

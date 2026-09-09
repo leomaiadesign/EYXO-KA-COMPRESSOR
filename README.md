@@ -49,6 +49,6 @@ Agora você pode usar o compressor direto de dentro do Figma sem precisar acessa
 
 ## 🔄 Últimas Atualizações (Changelog)
 
-- **v4.9.2** - Correção crítica de qualidade: snap de alpha aplicado APÓS o pngquant (não antes). pngquant agora recebe o RGBA completo para seleção ótima de cores, depois o alpha da paleta é binarizado — idêntico ao fluxo do TinyPNG.
+- **v4.9.3** - UX do Plugin: Nome completo do frame visível (sem truncamento), botões de Marcar Todas / Desmarcar / Inverter Seleção adicionados acima da lista de frames.
+- **v4.9.2** - Correção crítica de qualidade: snap de alpha aplicado APÓS o pngquant — pngquant recebe o RGBA completo para seleção ótima de cores, depois o alpha da paleta é binarizado.
 - **v4.9.1** - [Revertido] Binary alpha pré-pngquant causava posterização severa ao degradar a seleção de cores.
-- **v4.9.0** - Performance & Estabilidade: Algoritmo inteligente de compressão, timeout no servidor, AbortController no plugin e keep-alive via GitHub Actions.
