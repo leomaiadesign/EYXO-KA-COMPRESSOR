@@ -73,13 +73,16 @@
             border-radius: 6px; padding: 4px 8px; width: 70px; flex-shrink: 0;
         }
         .target-input-group:focus-within { border-color: var(--eyxo-blue); }
-        .kb-input {
+        select.kb-input {
             background: transparent; border: none; color: var(--eyxo-text); font-family: var(--eyxo-font-mono);
-            font-size: 13px; font-weight: 500; width: 100%; outline: none; text-align: right;
+            font-size: 13px; font-weight: 500; width: 100%; outline: none; text-align: right; cursor: pointer;
+            -webkit-appearance: none; appearance: none;
         }
-        .kb-suffix { color: var(--eyxo-text-muted); font-size: 11px; margin-left: 4px; font-weight: 600; }
-        
-        input[type=number]::-webkit-inner-spin-button, input[type=number]::-webkit-outer-spin-button { -webkit-appearance: none; margin: 0; }
+        select.kb-input option {
+            background: var(--eyxo-surface);
+            color: var(--eyxo-text);
+        }
+        .kb-suffix { color: var(--eyxo-text-muted); font-size: 11px; margin-left: 4px; font-weight: 600; pointer-events: none; }
 
         /* Thumbnails & Lightbox */
         .file-item-thumb {
@@ -257,7 +260,11 @@
                                 <div class="file-item-meta size-label" id="size-${item.id}">Calculando peso...</div>
                             </div>
                             <div class="target-input-group">
-                                <input type="number" class="kb-input" id="kb-${item.id}" value="200" min="1" onfocus="this.select()">
+                                <select class="kb-input" id="kb-${item.id}">
+                                    <option value="100">100</option>
+                                    <option value="200" selected>200</option>
+                                    <option value="500">500</option>
+                                </select>
                                 <span class="kb-suffix">KB</span>
                             </div>
                         </div>
