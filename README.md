@@ -49,6 +49,6 @@ Agora você pode usar o compressor direto de dentro do Figma sem precisar acessa
 
 ## 🔄 Últimas Atualizações (Changelog)
 
-- **v4.9.4** - Correção de bug no processamento: resolvido problema onde a imagem sumia da tela após o upload devido à falta de importação da biblioteca `re`.
-- **v4.9.3** - UX do Plugin: Nome completo do frame visível (sem truncamento), botões de Marcar Todas / Desmarcar / Inverter Seleção adicionados acima da lista de frames.
-- **v4.9.2** - Correção crítica de qualidade: snap de alpha aplicado APÓS o pngquant — pngquant recebe o RGBA completo para seleção ótima de cores, depois o alpha da paleta é binarizado.
+- **v4.9.8** - UX: Ajustado o valor padrão do seletor dropdown para iniciar em 200 KB.
+- **v4.9.7** - UX: Substituição do campo de limite livre por um seletor (dropdown) com valores pré-definidos (100 KB, 200 KB, 500 KB) garantindo maior estabilidade no processo.
+- **v4.9.6** - Performance e Qualidade: implementada Busca Binária (Binary Search) para encontrar o "ponto doce" da compressão em no máximo 4 tentativas, eliminando reduções desnecessárias.

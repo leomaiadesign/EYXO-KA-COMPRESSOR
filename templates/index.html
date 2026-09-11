@@ -147,8 +147,8 @@
             color: var(--eyxo-text-muted);
             margin-top: 3px;
         }
-        input[type="number"].file-item-input {
-            width: 80px;
+        select.file-item-input {
+            width: 100px;
             background: var(--eyxo-bg);
             border: 1px solid var(--eyxo-border);
             color: var(--eyxo-text);
@@ -156,11 +156,15 @@
             padding: 6px 8px;
             font-size: 12px;
             font-family: 'Moderat Mono', monospace;
-            text-align: right;
+            cursor: pointer;
+            outline: none;
             transition: border-color 0.2s;
         }
-        input[type="number"].file-item-input::placeholder { color: #555; }
-        input[type="number"].file-item-input:focus { outline: none; border-color: var(--eyxo-blue); }
+        select.file-item-input:focus { border-color: var(--eyxo-blue); }
+        select.file-item-input option {
+            background: var(--eyxo-surface);
+            color: var(--eyxo-text);
+        }
 
 
         /* Botões */
@@ -518,7 +522,11 @@
                                     <span class="file-item-name" title="{{ file.original_filename }}">{{ file.original_filename }}</span>
                                     <span class="file-item-size mono-font">{{ file.orig_size }} KB</span>
                                 </div>
-                                <input type="number" class="file-item-input" name="target_kb_{{ file.safe_name }}" min="10" placeholder="Limite KB" value="{{ file.target_kb if file.target_kb else '' }}">
+                                <select class="file-item-input" name="target_kb_{{ file.safe_name }}">
+                                    <option value="100" {% if file.target_kb == 100 %}selected{% endif %}>100 KB</option>
+                                    <option value="200" {% if file.target_kb == 200 or not file.target_kb %}selected{% endif %}>200 KB</option>
+                                    <option value="500" {% if file.target_kb == 500 %}selected{% endif %}>500 KB</option>
+                                </select>
                             </div>
                         {% endfor %}
                     </div>
@@ -591,7 +599,7 @@
     </div>
     
     <a href="https://github.com/leomaiadesign/EYXO-KA-COMPRESSOR" target="_blank" class="mono-font" style="position: fixed; bottom: 20px; right: 25px; font-size: 13px; font-weight: 600; color: var(--eyxo-text-muted); z-index: 100; letter-spacing: 0.5px; text-decoration: none; transition: color 0.2s;" onmouseover="this.style.color='#fff'" onmouseout="this.style.color='var(--eyxo-text-muted)'">
-        v4.9.4
+        v4.9.8
     </a>
 
     <script>
@@ -661,7 +669,11 @@
                             <span class="file-item-name" title="${f.original_filename}">${f.original_filename}</span>
                             <span class="file-item-size mono-font">${f.orig_size} KB</span>
                         </div>
-                        <input type="number" class="file-item-input" name="target_kb_${f.safe_name}" min="10" placeholder="Limite KB" value="${f.target_kb || ''}">
+                        <select class="file-item-input" name="target_kb_${f.safe_name}">
+                            <option value="100" ${f.target_kb === 100 ? 'selected' : ''}>100 KB</option>
+                            <option value="200" ${f.target_kb === 200 || !f.target_kb ? 'selected' : ''}>200 KB</option>
+                            <option value="500" ${f.target_kb === 500 ? 'selected' : ''}>500 KB</option>
+                        </select>
                     </div>
                 `;
             });
