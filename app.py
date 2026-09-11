@@ -93,7 +93,6 @@ def compress_image_data(img, target_bytes):
         low = 0
         high = len(pngquant_strategies) - 1
         
-        # Busca Binária: Testa o meio, se passar tenta melhorar a qualidade, se falhar reduz a qualidade
         while low <= high:
             mid = (low + high) // 2
             params = pngquant_strategies[mid]
@@ -105,20 +104,23 @@ def compress_image_data(img, target_bytes):
                     stdout=subprocess.PIPE,
                     stderr=subprocess.PIPE
                 )
-                out, err = process.communicate(input=original_best_data, timeout=20)
+                out, err = process.communicate(input=original_best_data, timeout=15)
                 
                 if process.returncode == 0:
                     temp_data = snap_palette_alpha(out)
                     if len(temp_data) <= target_bytes:
                         best_valid_data = temp_data
                         success_pngquant = True
-                        high = mid - 1  # Achou uma que serve, vamos tentar uma qualidade ainda melhor (índice menor)
+                        high = mid - 1
                     else:
-                        low = mid + 1   # Ficou pesado, precisamos de mais compressão (índice maior)
+                        low = mid + 1
                 else:
-                    low = mid + 1       # Falhou (ex: não conseguiu atingir a qualidade). Tenta mais compressão.
+                    low = mid + 1
+            except subprocess.TimeoutExpired:
+                process.kill()
+                low = mid + 1
             except Exception:
-                low = mid + 1           # Erro genérico, tenta mais compressão.
+                low = mid + 1
                 
         if success_pngquant and best_valid_data:
             best_data = best_valid_data
@@ -138,17 +140,15 @@ def compress_image_data(img, target_bytes):
                 ('quantize', 8)
             ]
             
-            low = 0
-            high = len(strategies) - 1
-            best_valid_img = None
-            best_temp_img = img
+            ratio = target_bytes / len(original_best_data)
+            if ratio > 0.50: pil_start = 0
+            elif ratio > 0.35: pil_start = 5
+            elif ratio > 0.20: pil_start = 7
+            else: pil_start = 8
             
-            # Busca Binária para o fallback do PIL
-            while low <= high:
-                mid = (low + high) // 2
-                strat_type, param = strategies[mid]
+            best_temp_img = img
+            for strat_type, param in strategies[pil_start:]:
                 q_io = io.BytesIO()
-                
                 if strat_type == 'posterize':
                     r, g, b, a = img.split()
                     r = ImageOps.posterize(r, param)
@@ -160,18 +160,9 @@ def compress_image_data(img, target_bytes):
                     temp_img = img.quantize(colors=param, method=Image.Quantize.FASTOCTREE, dither=1)
                         
                 temp_img.save(q_io, format='PNG', compress_level=6)
-                
+                best_temp_img = temp_img
                 if q_io.tell() <= target_bytes:
-                    best_valid_img = temp_img
-                    high = mid - 1  # Achou uma que serve, vamos tentar qualidade melhor
-                else:
-                    low = mid + 1   # Ficou pesado, vamos comprimir mais
-            
-            if best_valid_img:
-                best_temp_img = best_valid_img
-            else:
-                # Se NENHUMA estratégia bateu o peso (nem a pior de todas), usa a mais agressiva de qualquer forma
-                best_temp_img = img.quantize(colors=8, method=Image.Quantize.FASTOCTREE, dither=1)
+                    break
             
             final_io = io.BytesIO()
             best_temp_img.save(final_io, format='PNG', optimize=True)

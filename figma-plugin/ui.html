@@ -346,9 +346,9 @@
                         formData.append('image', originalBlob, `${img.name}.png`);
                         formData.append('target_kb', img.target_kb);
                         
-                        // AbortController: cancela o fetch após 60 segundos
+                        // AbortController: cancela o fetch após 120 segundos
                         const controller = new AbortController();
-                        const timeoutId = setTimeout(() => controller.abort(), 60000);
+                        const timeoutId = setTimeout(() => controller.abort(), 120000);
                         
                         let response;
                         try {
@@ -362,7 +362,7 @@
                             clearTimeout(timeoutId);
                             if (fetchErr.name === 'AbortError') {
                                 showPanel('panel-setup');
-                                alert(`Timeout: "${img.name}.png" demorou mais de 60s.\nTente um alvo de KB maior ou verifique a conexão.`);
+                                alert(`Timeout: "${img.name}.png" demorou mais de 120s.\nTente um alvo de KB maior ou verifique a conexão.`);
                                 return;
                             }
                             throw fetchErr;
