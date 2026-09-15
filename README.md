@@ -49,6 +49,6 @@ Agora você pode usar o compressor direto de dentro do Figma sem precisar acessa
 
 ## 🔄 Últimas Atualizações (Changelog)
 
+- **v4.10.0** - Funcionalidade: O Plugin do Figma agora respeita as configurações de exportação definidas nativamente no nó (como resolução ex. '581w'), garantindo compatibilidade com tamanhos de exportação específicos.
 - **v4.9.9** - Performance e Correção de Timeout: Otimizada a Busca Binária para fallbacks grandes, reduzindo o tempo de processamento; corrigido vazamento de processos (zombies); tempo limite do plugin aumentado para 120s.
 - **v4.9.8** - UX: Ajustado o valor padrão do seletor dropdown para iniciar em 200 KB e atualização estendida para a interface do Plugin do Figma.
-- **v4.9.7** - UX: Substituição do campo de limite livre por um seletor (dropdown) com valores pré-definidos (100 KB, 200 KB, 500 KB) garantindo maior estabilidade no processo.

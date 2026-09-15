@@ -13,10 +13,22 @@ const initialList = frames.map(node => ({
 }));
 figma.ui.postMessage({ type: 'initial-list', items: initialList });
 
+function getExportSettingForNode(node) {
+  let setting = { format: 'PNG' };
+  if (node.exportSettings && node.exportSettings.length > 0) {
+    // Procura por uma configuração PNG, ou pega a primeira disponível e ajusta para PNG
+    const pngSetting = node.exportSettings.find(s => s.format === 'PNG') || node.exportSettings[0];
+    if (pngSetting && pngSetting.constraint) {
+      setting.constraint = pngSetting.constraint;
+    }
+  }
+  return setting;
+}
+
 async function calculateSizes() {
   for (const node of frames) {
     try {
-      const fullBytes = await node.exportAsync({ format: 'PNG' });
+      const fullBytes = await node.exportAsync(getExportSettingForNode(node));
       const thumbBytes = await node.exportAsync({ format: 'PNG', constraint: { type: 'SCALE', value: 0.1 } });
       
       figma.ui.postMessage({ 
@@ -53,7 +65,7 @@ figma.ui.onmessage = async (msg) => {
       const node = figma.getNodeById(req.id);
       if (node) {
         try {
-          const bytes = await node.exportAsync({ format: 'PNG' });
+          const bytes = await node.exportAsync(getExportSettingForNode(node));
           compressedImages.push({
             id: node.id,
             name: node.name.replace(/[^a-z0-9]/gi, '_').toLowerCase(),
@@ -70,7 +82,7 @@ figma.ui.onmessage = async (msg) => {
       const node = figma.getNodeById(req.id);
       if (node) {
         try {
-          const bytes = await node.exportAsync({ format: 'PNG' });
+          const bytes = await node.exportAsync(getExportSettingForNode(node));
           originalImages.push({
             id: node.id,
             name: node.name.replace(/[^a-z0-9]/gi, '_').toLowerCase(),
