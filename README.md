@@ -1,6 +1,6 @@
 # ✂️ EYXO | KA Compressor
 
-**Compressão inteligente de PNG com preservação de transparência — direto no Figma, sem servidor.**
+**Compressão inteligente de PNG com preservação de transparência**
 
 ---
 
@@ -37,6 +37,6 @@
 
 ## Histórico (Changelog)
 
-- **v5.0.0** - Migração completa para plugin Figma standalone: compressão 100% local via WASM, servidor Render removido, pasta reorganizada.
+- **v5.0.1** - Correção: motor de compressão migrado de Web Worker para thread principal (compatibilidade com sandbox do Figma).
+- **v5.0.0** - Migração completa para plugin Figma standalone: compressão 100% local, servidor Render removido, pasta reorganizada.
 - **v4.10.0** - Plugin do Figma respeita as configurações de exportação nativas do nó (resolução customizada).
-- **v4.9.9** - Otimização da busca binária de qualidade; correção de timeout e zombie processes.

@@ -38,22 +38,18 @@
         }
         .btn:hover { background-color: #0000D1; }
         .btn:disabled { background-color: #333; color: #777; cursor: not-allowed; }
-
         .btn-outline { background-color: transparent; border: 1px solid var(--eyxo-border); margin-top: 10px; }
         .btn-outline:hover { background-color: var(--eyxo-surface); }
-
         .btn-group { display: flex; flex-direction: column; gap: 10px; margin-top: auto; }
 
         .selection-list {
             display: flex; flex-direction: column; gap: 12px; margin-bottom: 24px;
             flex: 1; overflow-y: auto; padding-right: 4px;
         }
-
         .empty-state {
             padding: 20px; text-align: center; background: var(--eyxo-surface); border: 1px dashed var(--eyxo-border);
             border-radius: 8px; color: var(--eyxo-text-muted); font-size: 13px; margin-bottom: 24px;
         }
-
         .file-item {
             background: var(--eyxo-surface); border: 1px solid var(--eyxo-border); border-radius: 8px;
             padding: 12px; display: flex; align-items: center; gap: 12px; transition: border-color 0.2s;
@@ -82,7 +78,6 @@
         select.kb-input option { background: var(--eyxo-surface); color: var(--eyxo-text); }
         .kb-suffix { color: var(--eyxo-text-muted); font-size: 11px; margin-left: 4px; font-weight: 600; pointer-events: none; }
 
-        /* Thumbnails & Lightbox */
         .file-item-thumb {
             width: 44px; height: 44px; border-radius: 4px; background: #1a1a1a; object-fit: cover;
             flex-shrink: 0; cursor: pointer; transition: transform 0.2s; align-self: flex-start;
@@ -94,10 +89,9 @@
             background: rgba(0,0,0,0.9); z-index: 1000; justify-content: center; align-items: center; cursor: pointer;
             flex-direction: column;
         }
-        #lightbox img { max-width: 90%; max-height: 90%; border-radius: 8px; box-shadow: 0 10px 30px rgba(0,0,0,0.5); }
+        #lightbox img { max-width: 90%; max-height: 90%; border-radius: 8px; }
         #lightbox p { margin-top: 15px; color: #fff; font-size: 12px; }
 
-        /* Loading panel */
         #panel-loading { justify-content: center; align-items: center; text-align: center; }
         .loader {
             border: 3px solid var(--eyxo-border); border-top: 3px solid var(--eyxo-blue); border-radius: 50%;
@@ -105,13 +99,11 @@
         }
         @keyframes spin { 100% { transform: rotate(360deg); } }
 
-        /* Progress bar */
         .progress-bar-track {
             width: 100%; background: var(--eyxo-surface); border-radius: 4px; height: 4px; margin-top: 16px; overflow: hidden;
         }
         .progress-bar-fill {
-            height: 100%; background: var(--eyxo-blue); border-radius: 4px;
-            transition: width 0.3s ease; width: 0%;
+            height: 100%; background: var(--eyxo-blue); border-radius: 4px; transition: width 0.3s ease; width: 0%;
         }
 
         ::-webkit-scrollbar { width: 4px; }
@@ -178,7 +170,6 @@
         </div>
     </div>
 
-    <!-- Lightbox -->
     <div id="lightbox" onclick="this.style.display='none'">
         <img id="lightbox-img" src="">
         <p>Clique em qualquer lugar para fechar</p>
@@ -186,190 +177,140 @@
 
     <script>
     // ─────────────────────────────────────────────────────────────────────────
-    // MOTOR DE COMPRESSÃO LOCAL (WASM-FIRST + CANVAS FALLBACK)
-    // Sem servidor. Sem rede. Tudo roda localmente no navegador do Figma.
+    // MOTOR DE COMPRESSÃO — roda na thread principal (compatível com Figma)
+    // Usa <canvas> + <img> nativos do browser. Sem Worker, sem WASM externo.
     // ─────────────────────────────────────────────────────────────────────────
 
-    // Web Worker inline: roda a compressão em thread separada para não travar a UI
-    const WORKER_CODE = `
-        // ── Utilitários de PNG ─────────────────────────────────────────────
-
-        // Lê um PNG Uint8Array e retorna { width, height, data: Uint8ClampedArray RGBA }
-        async function decodePng(bytes) {
+    // Decodifica PNG (Uint8Array) → pixels RGBA usando <img> + <canvas>
+    function decodePng(bytes) {
+        return new Promise((resolve, reject) => {
             const blob = new Blob([bytes], { type: 'image/png' });
-            const bmp  = await createImageBitmap(blob);
-            const canvas = new OffscreenCanvas(bmp.width, bmp.height);
-            const ctx = canvas.getContext('2d');
-            ctx.drawImage(bmp, 0, 0);
-            const imgData = ctx.getImageData(0, 0, bmp.width, bmp.height);
-            bmp.close();
-            return { width: bmp.width, height: bmp.height, data: imgData.data };
-        }
-
-        // Codifica pixels RGBA para PNG via OffscreenCanvas
-        async function encodePng(rgba, width, height) {
-            const canvas = new OffscreenCanvas(width, height);
-            const ctx = canvas.getContext('2d');
-            const imgData = new ImageData(new Uint8ClampedArray(rgba), width, height);
-            ctx.putImageData(imgData, 0, 0);
-            const blob = await canvas.convertToBlob({ type: 'image/png' });
-            return new Uint8Array(await blob.arrayBuffer());
-        }
-
-        // ── Quantização de cores com preservação de alpha ──────────────────
-        // Implementação baseada no algoritmo median-cut / octree simplificado.
-        // Para o motor WASM (libimagequant) é carregado dinamicamente abaixo.
-
-        let libimagequantReady = false;
-        let libimagequant = null;
-
-        async function tryLoadWasm() {
-            try {
-                // Carrega libimagequant-wasm via esm.sh (CDN confiável para ESM/WASM)
-                const mod = await import('https://esm.sh/libimagequant-wasm@1.0.4');
-                libimagequant = mod.default || mod;
-                libimagequantReady = true;
-            } catch (e) {
-                libimagequantReady = false;
-            }
-        }
-
-        // Quantização nativa JS com preservação de alpha (fallback sem WASM)
-        // Algoritmo: mediana de componentes R, G, B com bucket por qualidade
-        function quantizeCanvas(rgba, width, height, numColors) {
-            // Snap alpha: mantém apenas 0 ou 255 (preserva transparência)
-            const snapped = new Uint8ClampedArray(rgba.length);
-            for (let i = 0; i < rgba.length; i += 4) {
-                snapped[i]     = rgba[i];
-                snapped[i + 1] = rgba[i + 1];
-                snapped[i + 2] = rgba[i + 2];
-                snapped[i + 3] = rgba[i + 3] >= 128 ? 255 : 0;
-            }
-
-            // Paleta simples: agrupa cores em buckets de quantização uniforme
-            const bits = Math.ceil(Math.log2(numColors));
-            const step = Math.max(1, Math.floor(256 / Math.pow(2, Math.ceil(bits / 3))));
-            const result = new Uint8ClampedArray(snapped.length);
-            for (let i = 0; i < snapped.length; i += 4) {
-                const a = snapped[i + 3];
-                if (a === 0) {
-                    result[i] = result[i+1] = result[i+2] = result[i+3] = 0;
-                } else {
-                    result[i]     = Math.round(snapped[i] / step) * step;
-                    result[i + 1] = Math.round(snapped[i+1] / step) * step;
-                    result[i + 2] = Math.round(snapped[i+2] / step) * step;
-                    result[i + 3] = 255;
-                }
-            }
-            return result;
-        }
-
-        // ── Motor principal de compressão com busca binária de qualidade ───
-        // Replica o algoritmo do app.py (compress_image_data) 100% local.
-        async function compressImage(bytes, targetKb) {
-            const targetBytes = targetKb > 0 ? targetKb * 1024 : 0;
-
-            // 1. Decodifica o PNG original
-            const { width, height, data: rgba } = await decodePng(bytes);
-
-            // 2. Re-codifica sem metadados (compressão base)
-            let bestData = await encodePng(rgba, width, height);
-
-            if (targetBytes === 0 || bestData.length <= targetBytes) {
-                return bestData;
-            }
-
-            // 3. Tenta WASM (libimagequant) com busca binária de qualidade
-            if (libimagequantReady && libimagequant) {
-                const qualities = [
-                    [80, 100], [65, 85], [50, 70], [35, 55], [20, 40], [10, 25]
-                ];
-
-                let lo = 0, hi = qualities.length - 1;
-                let bestWasmData = null;
-
-                while (lo <= hi) {
-                    const mid = (lo + hi) >> 1;
-                    const [qMin, qMax] = qualities[mid];
-                    try {
-                        const liq = new libimagequant.Attributes();
-                        liq.setQuality(qMin, qMax);
-                        liq.setSpeed(3);
-
-                        const image = new libimagequant.Image(liq, rgba, width, height, 0);
-                        const res   = liq.quantize(image);
-                        const { palette, indexed } = res.remapImage(image);
-
-                        // Snap alpha na paleta
-                        const snappedPalette = palette.map(c => ({
-                            r: c.r, g: c.g, b: c.b,
-                            a: c.a >= 128 ? 255 : 0
-                        }));
-
-                        // Reconstrói RGBA a partir da paleta indexada
-                        const outRgba = new Uint8ClampedArray(width * height * 4);
-                        for (let i = 0; i < indexed.length; i++) {
-                            const c = snappedPalette[indexed[i]];
-                            outRgba[i*4]     = c.r;
-                            outRgba[i*4 + 1] = c.g;
-                            outRgba[i*4 + 2] = c.b;
-                            outRgba[i*4 + 3] = c.a;
-                        }
-
-                        liq.free(); image.free(); res.free();
-
-                        const candidate = await encodePng(outRgba, width, height);
-                        if (candidate.length <= targetBytes) {
-                            bestWasmData = candidate;
-                            hi = mid - 1; // tenta qualidade maior
-                        } else {
-                            lo = mid + 1; // precisa comprimir mais
-                        }
-                    } catch (e) {
-                        lo = mid + 1;
-                    }
-                }
-
-                if (bestWasmData) return bestWasmData;
-            }
-
-            // 4. Fallback Canvas: posterização/quantização progressiva
-            const strategies = [256, 192, 128, 96, 64, 48, 32, 24, 16, 8];
-            for (const numColors of strategies) {
-                const quantized = quantizeCanvas(rgba, width, height, numColors);
-                const candidate = await encodePng(quantized, width, height);
-                if (candidate.length <= targetBytes) {
-                    return candidate;
-                }
-            }
-
-            // Retorna melhor resultado mesmo que não atingiu o alvo
-            return await encodePng(quantizeCanvas(rgba, width, height, 8), width, height);
-        }
-
-        // ── Listener do Worker ─────────────────────────────────────────────
-        self.onmessage = async (e) => {
-            const { type, id, bytes, targetKb } = e.data;
-            if (type === 'init') {
-                await tryLoadWasm();
-                self.postMessage({ type: 'ready', wasmLoaded: libimagequantReady });
-                return;
-            }
-            if (type === 'compress') {
+            const url  = URL.createObjectURL(blob);
+            const img  = new Image();
+            img.onload = () => {
                 try {
-                    const result = await compressImage(new Uint8Array(bytes), targetKb);
-                    self.postMessage({ type: 'done', id, result: result.buffer }, [result.buffer]);
-                } catch (err) {
-                    self.postMessage({ type: 'error', id, message: err.message });
+                    const canvas = document.createElement('canvas');
+                    canvas.width  = img.naturalWidth;
+                    canvas.height = img.naturalHeight;
+                    if (canvas.width === 0 || canvas.height === 0) {
+                        URL.revokeObjectURL(url);
+                        reject(new Error('Imagem com dimensão zero'));
+                        return;
+                    }
+                    const ctx = canvas.getContext('2d');
+                    ctx.drawImage(img, 0, 0);
+                    const imageData = ctx.getImageData(0, 0, canvas.width, canvas.height);
+                    URL.revokeObjectURL(url);
+                    resolve({ width: canvas.width, height: canvas.height, data: imageData.data, canvas, ctx });
+                } catch (e) {
+                    URL.revokeObjectURL(url);
+                    reject(e);
                 }
-            }
-        };
-    `;
+            };
+            img.onerror = () => { URL.revokeObjectURL(url); reject(new Error('Falha ao carregar imagem')); };
+            img.src = url;
+        });
+    }
 
-    // ── UI ────────────────────────────────────────────────────────────────
-    const panelSetup   = document.getElementById('panel-setup');
-    const panelLoading = document.getElementById('panel-loading');
-    const panelResults = document.getElementById('panel-results');
+    // Codifica pixels RGBA → PNG Blob usando <canvas>
+    function encodePng(rgba, width, height) {
+        return new Promise((resolve, reject) => {
+            const canvas = document.createElement('canvas');
+            canvas.width  = width;
+            canvas.height = height;
+            const ctx = canvas.getContext('2d');
+            const imageData = new ImageData(new Uint8ClampedArray(rgba), width, height);
+            ctx.putImageData(imageData, 0, 0);
+            canvas.toBlob((blob) => {
+                if (!blob) { reject(new Error('Falha ao codificar PNG')); return; }
+                resolve(blob);
+            }, 'image/png');
+        });
+    }
+
+    // Snap alpha: mantém só 0 ou 255 (elimina semi-transparência, preserva transparência real)
+    function snapAlpha(rgba) {
+        const out = new Uint8ClampedArray(rgba.length);
+        for (let i = 0; i < rgba.length; i += 4) {
+            const a = rgba[i + 3];
+            if (a < 128) {
+                out[i] = out[i+1] = out[i+2] = out[i+3] = 0;
+            } else {
+                out[i]     = rgba[i];
+                out[i + 1] = rgba[i + 1];
+                out[i + 2] = rgba[i + 2];
+                out[i + 3] = 255;
+            }
+        }
+        return out;
+    }
+
+    // Quantização de cores por bucketing (reduz paleta para N cores aprox.)
+    function quantizePixels(rgba, step) {
+        const out = new Uint8ClampedArray(rgba.length);
+        for (let i = 0; i < rgba.length; i += 4) {
+            const a = rgba[i + 3];
+            if (a < 128) {
+                out[i] = out[i+1] = out[i+2] = out[i+3] = 0;
+            } else {
+                out[i]     = Math.min(255, Math.round(rgba[i]     / step) * step);
+                out[i + 1] = Math.min(255, Math.round(rgba[i + 1] / step) * step);
+                out[i + 2] = Math.min(255, Math.round(rgba[i + 2] / step) * step);
+                out[i + 3] = 255;
+            }
+        }
+        return out;
+    }
+
+    // Função principal de compressão com busca binária de qualidade
+    async function compressImage(bytes, targetKb) {
+        const targetBytes = targetKb > 0 ? targetKb * 1024 : 0;
+
+        // 1. Decodifica o PNG original
+        const { width, height, data: rgba } = await decodePng(bytes);
+
+        // 2. Snap de alpha e codificação base (sem quantização)
+        const snapped  = snapAlpha(rgba);
+        const baseBlob = await encodePng(snapped, width, height);
+
+        // Já está dentro do alvo → retorna direto
+        if (targetBytes === 0 || baseBlob.size <= targetBytes) {
+            return baseBlob;
+        }
+
+        // 3. Busca binária por nível de quantização
+        // step maior = menos cores = arquivo menor
+        const steps = [4, 8, 12, 16, 24, 32, 48, 64, 96, 128];
+        let bestBlob = null;
+        let lo = 0, hi = steps.length - 1;
+
+        while (lo <= hi) {
+            const mid       = (lo + hi) >> 1;
+            const quantized = quantizePixels(rgba, steps[mid]);
+            const candidate = await encodePng(quantized, width, height);
+
+            if (candidate.size <= targetBytes) {
+                bestBlob = candidate;
+                hi = mid - 1; // tenta qualidade maior (step menor)
+            } else {
+                lo = mid + 1; // precisa comprimir mais
+            }
+        }
+
+        // Retorna melhor resultado válido ou o mais comprimido disponível
+        if (bestBlob) return bestBlob;
+
+        // Último recurso: step máximo
+        const last = quantizePixels(rgba, steps[steps.length - 1]);
+        return await encodePng(last, width, height);
+    }
+
+    // Utilitário: yield para o browser poder atualizar a UI
+    function tick() {
+        return new Promise(r => setTimeout(r, 0));
+    }
+
+    // ── UI ────────────────────────────────────────────────────────────────────
 
     const emptySelection    = document.getElementById('empty-selection');
     const selectionList     = document.getElementById('selection-list');
@@ -386,27 +327,19 @@
     let finalOriginals = [];
     let objectUrlsToRevoke = [];
 
-    // Inicia o Web Worker
-    const workerBlob = new Blob([WORKER_CODE], { type: 'application/javascript' });
-    const workerUrl  = URL.createObjectURL(workerBlob);
-    const worker     = new Worker(workerUrl);
-
-    let workerReady = false;
-    worker.postMessage({ type: 'init' });
-
     function showPanel(id) {
         document.querySelectorAll('.panel').forEach(p => p.classList.remove('active'));
         document.getElementById(id).classList.add('active');
     }
 
     function formatBytes(bytes) {
-        if (bytes === 0) return '0 KB';
+        if (!bytes) return '0 KB';
         return (bytes / 1024).toFixed(1) + ' KB';
     }
 
     function updateCompressButtonState() {
         const checked = document.querySelectorAll('.frame-checkbox:checked');
-        compressBtn.disabled = checked.length === 0 || !workerReady;
+        compressBtn.disabled = checked.length === 0;
         compressBtn.textContent = checked.length > 0
             ? `COMPRIMIR ${checked.length} ITEM(S)`
             : 'COMPRIMIR SELEÇÃO';
@@ -417,12 +350,11 @@
         document.getElementById('lightbox').style.display = 'flex';
     }
 
-    // Controles de seleção em massa
     document.getElementById('btn-select-all').onclick   = () => { document.querySelectorAll('.frame-checkbox').forEach(cb => cb.checked = true);  updateCompressButtonState(); };
     document.getElementById('btn-deselect-all').onclick = () => { document.querySelectorAll('.frame-checkbox').forEach(cb => cb.checked = false); updateCompressButtonState(); };
     document.getElementById('btn-invert').onclick       = () => { document.querySelectorAll('.frame-checkbox').forEach(cb => cb.checked = !cb.checked); updateCompressButtonState(); };
 
-    // ── Mensagens do Figma plugin (code.js) ───────────────────────────────
+    // ── Mensagens do Figma (code.js) ──────────────────────────────────────────
     window.onmessage = async (event) => {
         const msg = event.data.pluginMessage;
         if (!msg) return;
@@ -431,12 +363,12 @@
             const items = msg.items;
             if (items.length === 0) {
                 emptySelection.style.display = 'block';
-                selectionList.style.display = 'none';
+                selectionList.style.display  = 'none';
                 selectionControls.classList.remove('visible');
                 compressBtn.disabled = true;
             } else {
                 emptySelection.style.display = 'none';
-                selectionList.style.display = 'flex';
+                selectionList.style.display  = 'flex';
                 selectionControls.classList.add('visible');
 
                 selectionList.innerHTML = items.map(item => `
@@ -488,7 +420,7 @@
             alert(msg.message);
         }
 
-        // ── Bytes prontos → comprime localmente via Worker ─────────────────
+        // ── Bytes prontos → comprime localmente ───────────────────────────────
         if (msg.type === 'selection-bytes-ready') {
             finalImages    = [];
             finalOriginals = [];
@@ -498,12 +430,11 @@
             const toKeep     = msg.originalImages   || [];
             const total      = toCompress.length;
 
-            // Processa originais (não marcados) — apenas cria blob
+            // Originais intactos (não marcados)
             for (const img of toKeep) {
-                const blob      = new Blob([img.bytes], { type: 'image/png' });
+                const blob       = new Blob([img.bytes], { type: 'image/png' });
                 const previewUrl = URL.createObjectURL(blob);
                 objectUrlsToRevoke.push(previewUrl);
-
                 finalOriginals.push({ name: `${img.name}.png`, blob });
 
                 resultsList.innerHTML += `
@@ -517,26 +448,25 @@
                 `;
             }
 
-            // Comprime cada imagem marcada em sequência via Worker
+            // Comprime cada imagem marcada
             try {
                 for (let i = 0; i < total; i++) {
                     const img = toCompress[i];
-                    const pct = Math.round(((i) / total) * 100);
-
                     loadingProgress.textContent = `${i + 1}/${total}: ${img.name}.png`;
-                    progressBar.style.width = pct + '%';
+                    progressBar.style.width = Math.round((i / total) * 100) + '%';
 
-                    const compressedBytes = await compressViaWorker(
-                        img.bytes.buffer,
+                    await tick(); // permite o browser atualizar a UI
+
+                    const compressedBlob = await compressImage(
+                        new Uint8Array(img.bytes),
                         parseInt(img.target_kb) || 200
                     );
 
-                    const compressedBlob = new Blob([compressedBytes], { type: 'image/png' });
-                    const previewUrl     = URL.createObjectURL(compressedBlob);
+                    const previewUrl = URL.createObjectURL(compressedBlob);
                     objectUrlsToRevoke.push(previewUrl);
 
                     // Nomenclatura inteligente: substitui número inicial pelo KB final
-                    const kbSize = Math.round(compressedBlob.size / 1024);
+                    const kbSize  = Math.round(compressedBlob.size / 1024);
                     let finalName = `${img.name}.png`;
                     if (/^\d+/.test(img.name)) {
                         finalName = `${img.name}.png`.replace(/^\d+(_?)/, `${kbSize}_`);
@@ -579,44 +509,15 @@
         }
     };
 
-    // ── Compressão via Worker (Promise wrapper) ────────────────────────────
-    function compressViaWorker(arrayBuffer, targetKb) {
-        return new Promise((resolve, reject) => {
-            const id = Math.random().toString(36).slice(2);
-
-            function handler(e) {
-                const data = e.data;
-                if (data.id !== id) return;
-                worker.removeEventListener('message', handler);
-                if (data.type === 'done')  resolve(new Uint8Array(data.result));
-                if (data.type === 'error') reject(new Error(data.message));
-            }
-
-            worker.addEventListener('message', handler);
-            worker.postMessage({ type: 'compress', id, bytes: arrayBuffer, targetKb }, [arrayBuffer]);
-        });
-    }
-
-    // ── Worker ready signal ───────────────────────────────────────────────
-    worker.onmessage = (e) => {
-        if (e.data.type === 'ready') {
-            workerReady = true;
-            updateCompressButtonState();
-        }
-        // outros eventos tratados pelo compressViaWorker listener acima
-    };
-
-    // ── Botão Comprimir ───────────────────────────────────────────────────
+    // ── Botão Comprimir ───────────────────────────────────────────────────────
     compressBtn.onclick = () => {
         const allCheckboxes = document.querySelectorAll('.frame-checkbox');
-        const toCompress = [];
-        const toKeep     = [];
+        const toCompress = [], toKeep = [];
 
         allCheckboxes.forEach(cb => {
             const id = cb.value;
             if (cb.checked) {
-                const kbInput = document.getElementById(`kb-${id}`).value;
-                toCompress.push({ id, targetKb: kbInput || 200 });
+                toCompress.push({ id, targetKb: document.getElementById(`kb-${id}`).value || 200 });
             } else {
                 toKeep.push({ id });
             }
@@ -630,41 +531,7 @@
         parent.postMessage({ pluginMessage: { type: 'compress-selected', toCompress, toKeep } }, '*');
     };
 
-    // ── Download (ZIP local via JSZip CDN ou single file) ─────────────────
-    async function performDownload(imagesArray, btnElement) {
-        const originalText = btnElement.textContent;
-        btnElement.textContent = 'AGUARDE...';
-        btnElement.disabled = true;
-
-        try {
-            if (imagesArray.length === 1) {
-                const url = URL.createObjectURL(imagesArray[0].blob);
-                const a = document.createElement('a');
-                a.href = url; a.download = imagesArray[0].name;
-                document.body.appendChild(a); a.click(); document.body.removeChild(a);
-                URL.revokeObjectURL(url);
-            } else {
-                // Usa JSZip para criar o ZIP localmente (sem servidor)
-                const JSZip = await loadJSZip();
-                const zip   = new JSZip();
-                for (const img of imagesArray) {
-                    zip.file(img.name, img.blob);
-                }
-                const zipBlob = await zip.generateAsync({ type: 'blob', compression: 'DEFLATE', compressionOptions: { level: 6 } });
-                const url = URL.createObjectURL(zipBlob);
-                const a   = document.createElement('a');
-                a.href = url; a.download = 'EYXO_Pacote_Final.zip';
-                document.body.appendChild(a); a.click(); document.body.removeChild(a);
-                URL.revokeObjectURL(url);
-            }
-        } catch (e) {
-            alert('Erro ao baixar: ' + e.message);
-        } finally {
-            btnElement.textContent = originalText;
-            btnElement.disabled = false;
-        }
-    }
-
+    // ── Download (ZIP local via JSZip CDN ou arquivo avulso) ──────────────────
     let _jszip = null;
     async function loadJSZip() {
         if (_jszip) return _jszip;
@@ -678,14 +545,41 @@
         return _jszip;
     }
 
-    downloadAllBtn.onclick = () => {
-        const allItems = [...finalOriginals, ...finalImages];
-        performDownload(allItems, downloadAllBtn);
-    };
+    async function performDownload(imagesArray, btnElement) {
+        const originalText = btnElement.textContent;
+        btnElement.textContent = 'AGUARDE...';
+        btnElement.disabled = true;
 
-    downloadCompressedBtn.onclick = () => {
-        performDownload(finalImages, downloadCompressedBtn);
-    };
+        try {
+            if (imagesArray.length === 1) {
+                const url = URL.createObjectURL(imagesArray[0].blob);
+                const a = document.createElement('a');
+                a.href = url; a.download = imagesArray[0].name;
+                document.body.appendChild(a); a.click();
+                document.body.removeChild(a);
+                URL.revokeObjectURL(url);
+            } else {
+                const JSZip = await loadJSZip();
+                const zip   = new JSZip();
+                for (const img of imagesArray) zip.file(img.name, img.blob);
+                const zipBlob = await zip.generateAsync({ type: 'blob', compression: 'DEFLATE', compressionOptions: { level: 6 } });
+                const url = URL.createObjectURL(zipBlob);
+                const a   = document.createElement('a');
+                a.href = url; a.download = 'EYXO_Pacote_Final.zip';
+                document.body.appendChild(a); a.click();
+                document.body.removeChild(a);
+                URL.revokeObjectURL(url);
+            }
+        } catch (e) {
+            alert('Erro ao baixar: ' + e.message);
+        } finally {
+            btnElement.textContent = originalText;
+            btnElement.disabled = false;
+        }
+    }
+
+    downloadAllBtn.onclick = () => performDownload([...finalOriginals, ...finalImages], downloadAllBtn);
+    downloadCompressedBtn.onclick = () => performDownload(finalImages, downloadCompressedBtn);
 
     backBtn.onclick = () => {
         showPanel('panel-setup');
