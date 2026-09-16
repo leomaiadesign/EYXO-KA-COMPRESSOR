@@ -14,26 +14,20 @@
             --eyxo-font-ui: 'Moderat', 'Helvetica Neue', Helvetica, Arial, sans-serif;
             --eyxo-font-mono: 'Moderat Mono', 'Courier New', Courier, monospace;
         }
-
         body {
             font-family: var(--eyxo-font-ui);
-            background-color: var(--eyxo-bg);
-            color: var(--eyxo-text);
-            margin: 0;
-            padding: 24px;
-            display: flex;
-            flex-direction: column;
-            height: 100vh;
-            box-sizing: border-box;
+            background-color: var(--eyxo-bg); color: var(--eyxo-text);
+            margin: 0; padding: 24px; display: flex; flex-direction: column;
+            height: 100vh; box-sizing: border-box;
         }
-
-        h1 { color: var(--eyxo-text); font-size: 20px; font-weight: 700; margin-top: 0; margin-bottom: 5px; letter-spacing: -0.5px; }
-        p { color: var(--eyxo-text-muted); font-size: 14px; margin-bottom: 24px; line-height: 1.5; font-weight: 400; }
-
+        h1 { font-size: 20px; font-weight: 700; margin-top: 0; margin-bottom: 5px; letter-spacing: -0.5px; }
+        p  { color: var(--eyxo-text-muted); font-size: 14px; margin-bottom: 24px; line-height: 1.5; font-weight: 400; }
         .btn {
-            background-color: var(--eyxo-blue); color: var(--eyxo-text); border: none; padding: 14px; border-radius: 8px;
-            font-size: 12px; font-weight: 700; text-transform: uppercase; letter-spacing: 1px; cursor: pointer;
-            width: 100%; transition: all 0.2s; margin-top: auto; display: flex; justify-content: center; align-items: center; text-align: center;
+            background-color: var(--eyxo-blue); color: var(--eyxo-text); border: none;
+            padding: 14px; border-radius: 8px; font-size: 12px; font-weight: 700;
+            text-transform: uppercase; letter-spacing: 1px; cursor: pointer;
+            width: 100%; transition: all 0.2s; margin-top: auto;
+            display: flex; justify-content: center; align-items: center;
             font-family: var(--eyxo-font-ui);
         }
         .btn:hover { background-color: #0000D1; }
@@ -41,87 +35,39 @@
         .btn-outline { background-color: transparent; border: 1px solid var(--eyxo-border); margin-top: 10px; }
         .btn-outline:hover { background-color: var(--eyxo-surface); }
         .btn-group { display: flex; flex-direction: column; gap: 10px; margin-top: auto; }
-
-        .selection-list {
-            display: flex; flex-direction: column; gap: 12px; margin-bottom: 24px;
-            flex: 1; overflow-y: auto; padding-right: 4px;
-        }
-        .empty-state {
-            padding: 20px; text-align: center; background: var(--eyxo-surface); border: 1px dashed var(--eyxo-border);
-            border-radius: 8px; color: var(--eyxo-text-muted); font-size: 13px; margin-bottom: 24px;
-        }
-        .file-item {
-            background: var(--eyxo-surface); border: 1px solid var(--eyxo-border); border-radius: 8px;
-            padding: 12px; display: flex; align-items: center; gap: 12px; transition: border-color 0.2s;
-        }
+        .selection-list { display: flex; flex-direction: column; gap: 12px; margin-bottom: 24px; flex: 1; overflow-y: auto; padding-right: 4px; }
+        .empty-state { padding: 20px; text-align: center; background: var(--eyxo-surface); border: 1px dashed var(--eyxo-border); border-radius: 8px; color: var(--eyxo-text-muted); font-size: 13px; margin-bottom: 24px; }
+        .file-item { background: var(--eyxo-surface); border: 1px solid var(--eyxo-border); border-radius: 8px; padding: 12px; display: flex; align-items: center; gap: 12px; transition: border-color 0.2s; }
         .file-item:hover { border-color: #333; }
         .file-item.is-original { border: 1px dashed var(--eyxo-border); opacity: 0.8; }
-
         input[type="checkbox"] { accent-color: var(--eyxo-blue); width: 16px; height: 16px; cursor: pointer; flex-shrink: 0; }
-
         .file-item-info { display: flex; flex-direction: column; flex: 1; overflow: hidden; }
         .file-item-name { font-size: 13px; font-weight: 600; white-space: normal; word-break: break-word; line-height: 1.3; }
         .file-item-meta { font-size: 12px; color: var(--eyxo-text-muted); margin-top: 4px; font-family: var(--eyxo-font-mono); }
         .file-item-meta .ok { color: #4CAF50; font-weight: 600; }
         .file-item-meta .badge-original { color: #888; font-weight: 500; font-family: var(--eyxo-font-ui); font-size: 10px; padding: 2px 4px; background: #222; border-radius: 4px; }
-
-        .target-input-group {
-            display: flex; align-items: center; background: var(--eyxo-bg); border: 1px solid var(--eyxo-border);
-            border-radius: 6px; padding: 4px 8px; width: 70px; flex-shrink: 0;
-        }
+        .target-input-group { display: flex; align-items: center; background: var(--eyxo-bg); border: 1px solid var(--eyxo-border); border-radius: 6px; padding: 4px 8px; width: 70px; flex-shrink: 0; }
         .target-input-group:focus-within { border-color: var(--eyxo-blue); }
-        select.kb-input {
-            background: transparent; border: none; color: var(--eyxo-text); font-family: var(--eyxo-font-mono);
-            font-size: 13px; font-weight: 500; width: 100%; outline: none; text-align: right; cursor: pointer;
-            -webkit-appearance: none; appearance: none;
-        }
+        select.kb-input { background: transparent; border: none; color: var(--eyxo-text); font-family: var(--eyxo-font-mono); font-size: 13px; font-weight: 500; width: 100%; outline: none; text-align: right; cursor: pointer; -webkit-appearance: none; appearance: none; }
         select.kb-input option { background: var(--eyxo-surface); color: var(--eyxo-text); }
         .kb-suffix { color: var(--eyxo-text-muted); font-size: 11px; margin-left: 4px; font-weight: 600; pointer-events: none; }
-
-        .file-item-thumb {
-            width: 44px; height: 44px; border-radius: 4px; background: #1a1a1a; object-fit: cover;
-            flex-shrink: 0; cursor: pointer; transition: transform 0.2s; align-self: flex-start;
-        }
+        .file-item-thumb { width: 44px; height: 44px; border-radius: 4px; background: #1a1a1a; object-fit: cover; flex-shrink: 0; cursor: pointer; transition: transform 0.2s; align-self: flex-start; }
         .file-item-thumb:hover { transform: scale(1.05); }
-
-        #lightbox {
-            display: none; position: fixed; top: 0; left: 0; width: 100%; height: 100%;
-            background: rgba(0,0,0,0.9); z-index: 1000; justify-content: center; align-items: center; cursor: pointer;
-            flex-direction: column;
-        }
+        #lightbox { display: none; position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.9); z-index: 1000; justify-content: center; align-items: center; cursor: pointer; flex-direction: column; }
         #lightbox img { max-width: 90%; max-height: 90%; border-radius: 8px; }
         #lightbox p { margin-top: 15px; color: #fff; font-size: 12px; }
-
         #panel-loading { justify-content: center; align-items: center; text-align: center; }
-        .loader {
-            border: 3px solid var(--eyxo-border); border-top: 3px solid var(--eyxo-blue); border-radius: 50%;
-            width: 30px; height: 30px; animation: spin 1s linear infinite; margin: 0 auto 15px auto;
-        }
+        .loader { border: 3px solid var(--eyxo-border); border-top: 3px solid var(--eyxo-blue); border-radius: 50%; width: 30px; height: 30px; animation: spin 1s linear infinite; margin: 0 auto 15px auto; }
         @keyframes spin { 100% { transform: rotate(360deg); } }
-
-        .progress-bar-track {
-            width: 100%; background: var(--eyxo-surface); border-radius: 4px; height: 4px; margin-top: 16px; overflow: hidden;
-        }
-        .progress-bar-fill {
-            height: 100%; background: var(--eyxo-blue); border-radius: 4px; transition: width 0.3s ease; width: 0%;
-        }
-
+        .progress-bar-track { width: 100%; background: var(--eyxo-surface); border-radius: 4px; height: 4px; margin-top: 16px; overflow: hidden; }
+        .progress-bar-fill { height: 100%; background: var(--eyxo-blue); border-radius: 4px; transition: width 0.3s ease; width: 0%; }
         ::-webkit-scrollbar { width: 4px; }
         ::-webkit-scrollbar-thumb { background: var(--eyxo-border); border-radius: 4px; }
-
         .panel { display: none; flex-direction: column; height: 100%; }
         .panel.active { display: flex; }
-
-        .selection-controls {
-            display: none; justify-content: flex-end; gap: 6px; margin-bottom: 10px; flex-shrink: 0;
-        }
+        .selection-controls { display: none; justify-content: flex-end; gap: 6px; margin-bottom: 10px; flex-shrink: 0; }
         .selection-controls.visible { display: flex; }
-        .sel-btn {
-            background: transparent; border: 1px solid var(--eyxo-border); color: var(--eyxo-text-muted);
-            border-radius: 5px; padding: 4px 9px; font-size: 10px; font-weight: 600;
-            text-transform: uppercase; letter-spacing: 0.5px; cursor: pointer; transition: all 0.15s;
-            font-family: var(--eyxo-font-ui);
-        }
+        .sel-btn { background: transparent; border: 1px solid var(--eyxo-border); color: var(--eyxo-text-muted); border-radius: 5px; padding: 4px 9px; font-size: 10px; font-weight: 600; text-transform: uppercase; letter-spacing: 0.5px; cursor: pointer; transition: all 0.15s; font-family: var(--eyxo-font-ui); }
         .sel-btn:hover { border-color: #555; color: var(--eyxo-text); background: var(--eyxo-surface); }
     </style>
 </head>
@@ -130,187 +76,259 @@
     <div id="panel-setup" class="panel active">
         <h1>KA Compressor</h1>
         <p>Selecione os frames da página e defina o limite alvo de KB individualmente.</p>
-
-        <div id="empty-selection" class="empty-state" style="display: none;">
-            Nenhum frame encontrado nesta página.
-        </div>
-
+        <div id="empty-selection" class="empty-state" style="display:none;">Nenhum frame encontrado nesta página.</div>
         <div id="selection-controls" class="selection-controls">
             <button class="sel-btn" id="btn-select-all">Marcar todas</button>
             <button class="sel-btn" id="btn-deselect-all">Desmarcar</button>
             <button class="sel-btn" id="btn-invert">Inverter</button>
         </div>
-
         <div id="selection-list" class="selection-list">
-            <div style="text-align:center; padding: 20px; color:#8F8F8F; font-size:13px;">Buscando frames...</div>
+            <div style="text-align:center;padding:20px;color:#8F8F8F;font-size:13px;">Buscando frames...</div>
         </div>
-
         <button id="compress-btn" class="btn" disabled>COMPRIMIR SELEÇÃO</button>
     </div>
 
     <div id="panel-loading" class="panel">
         <div class="loader"></div>
-        <div style="font-size: 15px; font-weight: 700;">OTIMIZANDO IMAGENS...</div>
-        <p id="loading-progress" style="margin-top: 8px; font-size: 12px; font-family: var(--eyxo-font-mono);">Preparando...</p>
-        <div class="progress-bar-track">
-            <div class="progress-bar-fill" id="progress-bar"></div>
-        </div>
+        <div style="font-size:15px;font-weight:700;">OTIMIZANDO IMAGENS...</div>
+        <p id="loading-progress" style="margin-top:8px;font-size:12px;font-family:var(--eyxo-font-mono);">Preparando...</p>
+        <div class="progress-bar-track"><div class="progress-bar-fill" id="progress-bar"></div></div>
     </div>
 
     <div id="panel-results" class="panel">
         <h1>Concluído!</h1>
         <p>Clique nas miniaturas para visualizar o tamanho real.</p>
-
         <div id="results-list" class="selection-list"></div>
-
         <div class="btn-group">
             <button id="download-all-btn" class="btn">BAIXAR PACOTE COMPLETO</button>
-            <button id="download-compressed-btn" class="btn btn-outline" style="display:none; margin-top:0;">BAIXAR SÓ OTIMIZADAS</button>
+            <button id="download-compressed-btn" class="btn btn-outline" style="display:none;margin-top:0;">BAIXAR SÓ OTIMIZADAS</button>
             <button id="back-btn" class="btn btn-outline" style="margin-top:0;">OTIMIZAR OUTROS</button>
         </div>
     </div>
 
     <div id="lightbox" onclick="this.style.display='none'">
-        <img id="lightbox-img" src="">
-        <p>Clique em qualquer lugar para fechar</p>
+        <img id="lightbox-img" src=""><p>Clique em qualquer lugar para fechar</p>
     </div>
 
     <script>
-    // ─────────────────────────────────────────────────────────────────────────
-    // MOTOR DE COMPRESSÃO — roda na thread principal (compatível com Figma)
-    // Usa <canvas> + <img> nativos do browser. Sem Worker, sem WASM externo.
-    // ─────────────────────────────────────────────────────────────────────────
+    // ═══════════════════════════════════════════════════════════════════════════
+    // MOTOR DE COMPRESSÃO — Median-Cut + Floyd-Steinberg Dithering
+    // Qualidade visual equivalente ao pngquant. Roda 100% local.
+    // ═══════════════════════════════════════════════════════════════════════════
 
-    // Decodifica PNG (Uint8Array) → pixels RGBA usando <img> + <canvas>
+    // ── Decodificação PNG via <img> + <canvas> ──────────────────────────────
     function decodePng(bytes) {
         return new Promise((resolve, reject) => {
             const blob = new Blob([bytes], { type: 'image/png' });
             const url  = URL.createObjectURL(blob);
             const img  = new Image();
             img.onload = () => {
-                try {
-                    const canvas = document.createElement('canvas');
-                    canvas.width  = img.naturalWidth;
-                    canvas.height = img.naturalHeight;
-                    if (canvas.width === 0 || canvas.height === 0) {
-                        URL.revokeObjectURL(url);
-                        reject(new Error('Imagem com dimensão zero'));
-                        return;
-                    }
-                    const ctx = canvas.getContext('2d');
-                    ctx.drawImage(img, 0, 0);
-                    const imageData = ctx.getImageData(0, 0, canvas.width, canvas.height);
-                    URL.revokeObjectURL(url);
-                    resolve({ width: canvas.width, height: canvas.height, data: imageData.data, canvas, ctx });
-                } catch (e) {
-                    URL.revokeObjectURL(url);
-                    reject(e);
-                }
+                const w = img.naturalWidth, h = img.naturalHeight;
+                if (!w || !h) { URL.revokeObjectURL(url); reject(new Error('Imagem com dimensão zero')); return; }
+                const canvas = document.createElement('canvas');
+                canvas.width = w; canvas.height = h;
+                const ctx = canvas.getContext('2d');
+                ctx.drawImage(img, 0, 0);
+                URL.revokeObjectURL(url);
+                resolve({ width: w, height: h, data: ctx.getImageData(0, 0, w, h).data, ctx, canvas });
             };
             img.onerror = () => { URL.revokeObjectURL(url); reject(new Error('Falha ao carregar imagem')); };
             img.src = url;
         });
     }
 
-    // Codifica pixels RGBA → PNG Blob usando <canvas>
+    // ── Codificação PNG via <canvas> ────────────────────────────────────────
     function encodePng(rgba, width, height) {
         return new Promise((resolve, reject) => {
             const canvas = document.createElement('canvas');
-            canvas.width  = width;
-            canvas.height = height;
+            canvas.width = width; canvas.height = height;
             const ctx = canvas.getContext('2d');
-            const imageData = new ImageData(new Uint8ClampedArray(rgba), width, height);
-            ctx.putImageData(imageData, 0, 0);
-            canvas.toBlob((blob) => {
+            ctx.putImageData(new ImageData(new Uint8ClampedArray(rgba), width, height), 0, 0);
+            canvas.toBlob(blob => {
                 if (!blob) { reject(new Error('Falha ao codificar PNG')); return; }
                 resolve(blob);
             }, 'image/png');
         });
     }
 
-    // Snap alpha: mantém só 0 ou 255 (elimina semi-transparência, preserva transparência real)
-    function snapAlpha(rgba) {
+    // ── Median-Cut: constrói paleta de N cores a partir de amostras ─────────
+    function buildPalette(rgba, numColors) {
+        // Coleta amostras (pula transparentes e amostra para economizar memória)
+        const stride = Math.max(1, Math.floor(rgba.length / 4 / 8000)) * 4;
+        const R = [], G = [], B = [];
+        for (let i = 0; i < rgba.length; i += stride) {
+            if (rgba[i + 3] > 127) { R.push(rgba[i]); G.push(rgba[i+1]); B.push(rgba[i+2]); }
+        }
+        if (R.length === 0) return [[128,128,128,255]];
+
+        // Buckets de median-cut: cada bucket guarda índices das amostras
+        let buckets = [Array.from({length: R.length}, (_, i) => i)];
+
+        while (buckets.length < numColors) {
+            // Escolhe o bucket com maior volume de cor
+            let maxVol = -1, splitIdx = 0;
+            for (let bi = 0; bi < buckets.length; bi++) {
+                const b = buckets[bi];
+                if (b.length < 2) continue;
+                let rMin=255,rMax=0,gMin=255,gMax=0,bMin=255,bMax=0;
+                for (const idx of b) {
+                    if(R[idx]<rMin)rMin=R[idx]; if(R[idx]>rMax)rMax=R[idx];
+                    if(G[idx]<gMin)gMin=G[idx]; if(G[idx]>gMax)gMax=G[idx];
+                    if(B[idx]<bMin)bMin=B[idx]; if(B[idx]>bMax)bMax=B[idx];
+                }
+                const vol = (rMax-rMin+1) * (gMax-gMin+1) * (bMax-bMin+1);
+                if (vol > maxVol) { maxVol = vol; splitIdx = bi; }
+            }
+            if (maxVol <= 1) break;
+
+            // Divide o bucket pelo canal de maior amplitude
+            const b = buckets[splitIdx];
+            let rMin=255,rMax=0,gMin=255,gMax=0,bMin=255,bMax=0;
+            for (const idx of b) {
+                if(R[idx]<rMin)rMin=R[idx]; if(R[idx]>rMax)rMax=R[idx];
+                if(G[idx]<gMin)gMin=G[idx]; if(G[idx]>gMax)gMax=G[idx];
+                if(B[idx]<bMin)bMin=B[idx]; if(B[idx]>bMax)bMax=B[idx];
+            }
+            const rRange = rMax-rMin, gRange = gMax-gMin, bRange = bMax-bMin;
+            let ch = 0;
+            if (gRange >= rRange && gRange >= bRange) ch = 1;
+            else if (bRange >= rRange && bRange >= gRange) ch = 2;
+            const arr = ch === 0 ? R : (ch === 1 ? G : B);
+            b.sort((a, z) => arr[a] - arr[z]);
+            const mid = b.length >> 1;
+            buckets.splice(splitIdx, 1, b.slice(0, mid), b.slice(mid));
+        }
+
+        // Cor média de cada bucket → paleta final
+        return buckets.map(b => {
+            let r=0,g=0,bl=0;
+            for (const idx of b) { r+=R[idx]; g+=G[idx]; bl+=B[idx]; }
+            const n = b.length;
+            return [Math.round(r/n), Math.round(g/n), Math.round(bl/n)];
+        });
+    }
+
+    // ── Nearest-palette lookup com cache ────────────────────────────────────
+    function makeNearestFinder(palette) {
+        const cache = new Map();
+        return function(r, g, b) {
+            const key = (r << 16) | (g << 8) | b;
+            if (cache.has(key)) return cache.get(key);
+            let best = 0, bestDist = Infinity;
+            for (let i = 0; i < palette.length; i++) {
+                const [pr,pg,pb] = palette[i];
+                const d = (r-pr)**2 + (g-pg)**2 + (b-pb)**2;
+                if (d < bestDist) { bestDist = d; best = i; if (d === 0) break; }
+            }
+            cache.set(key, best);
+            return best;
+        };
+    }
+
+    // ── Floyd-Steinberg Dithering (garante gradientes suaves) ───────────────
+    function applyDithering(rgba, width, height, palette) {
+        const findNearest = makeNearestFinder(palette);
+
+        // Buffer de erro em ponto flutuante
+        const eR = new Float32Array(width * height);
+        const eG = new Float32Array(width * height);
+        const eB = new Float32Array(width * height);
         const out = new Uint8ClampedArray(rgba.length);
-        for (let i = 0; i < rgba.length; i += 4) {
-            const a = rgba[i + 3];
-            if (a < 128) {
-                out[i] = out[i+1] = out[i+2] = out[i+3] = 0;
-            } else {
-                out[i]     = rgba[i];
-                out[i + 1] = rgba[i + 1];
-                out[i + 2] = rgba[i + 2];
+
+        for (let y = 0; y < height; y++) {
+            for (let x = 0; x < width; x++) {
+                const i  = (y * width + x) * 4;
+                const pi = y * width + x;
+                const a  = rgba[i + 3];
+
+                if (a < 128) {
+                    // Pixel transparente: zera tudo
+                    out[i] = out[i+1] = out[i+2] = out[i+3] = 0;
+                    continue;
+                }
+
+                // Cor original + erro acumulado (clamped 0-255)
+                const oldR = Math.min(255, Math.max(0, rgba[i]     + eR[pi]));
+                const oldG = Math.min(255, Math.max(0, rgba[i + 1] + eG[pi]));
+                const oldB = Math.min(255, Math.max(0, rgba[i + 2] + eB[pi]));
+
+                // Mapeia para cor mais próxima na paleta
+                const pIdx = findNearest(Math.round(oldR), Math.round(oldG), Math.round(oldB));
+                const [newR, newG, newB] = palette[pIdx];
+
+                out[i]     = newR;
+                out[i + 1] = newG;
+                out[i + 2] = newB;
                 out[i + 3] = 255;
+
+                // Calcula erro de quantização
+                const errR = oldR - newR;
+                const errG = oldG - newG;
+                const errB = oldB - newB;
+
+                // Distribui erro (pesos Floyd-Steinberg: 7, 3, 5, 1 / 16)
+                if (x + 1 < width) {
+                    eR[pi+1] += errR * 7/16; eG[pi+1] += errG * 7/16; eB[pi+1] += errB * 7/16;
+                }
+                if (y + 1 < height) {
+                    const ni = (y+1) * width + x;
+                    if (x > 0) {
+                        eR[ni-1] += errR * 3/16; eG[ni-1] += errG * 3/16; eB[ni-1] += errB * 3/16;
+                    }
+                    eR[ni]   += errR * 5/16; eG[ni]   += errG * 5/16; eB[ni]   += errB * 5/16;
+                    if (x + 1 < width) {
+                        eR[ni+1] += errR * 1/16; eG[ni+1] += errG * 1/16; eB[ni+1] += errB * 1/16;
+                    }
+                }
             }
         }
         return out;
     }
 
-    // Quantização de cores por bucketing (reduz paleta para N cores aprox.)
-    function quantizePixels(rgba, step) {
-        const out = new Uint8ClampedArray(rgba.length);
-        for (let i = 0; i < rgba.length; i += 4) {
-            const a = rgba[i + 3];
-            if (a < 128) {
-                out[i] = out[i+1] = out[i+2] = out[i+3] = 0;
-            } else {
-                out[i]     = Math.min(255, Math.round(rgba[i]     / step) * step);
-                out[i + 1] = Math.min(255, Math.round(rgba[i + 1] / step) * step);
-                out[i + 2] = Math.min(255, Math.round(rgba[i + 2] / step) * step);
-                out[i + 3] = 255;
-            }
-        }
-        return out;
-    }
-
-    // Função principal de compressão com busca binária de qualidade
+    // ── Motor principal: busca binária entre tamanhos de paleta ─────────────
     async function compressImage(bytes, targetKb) {
         const targetBytes = targetKb > 0 ? targetKb * 1024 : 0;
 
-        // 1. Decodifica o PNG original
         const { width, height, data: rgba } = await decodePng(bytes);
 
-        // 2. Snap de alpha e codificação base (sem quantização)
-        const snapped  = snapAlpha(rgba);
-        const baseBlob = await encodePng(snapped, width, height);
+        // Tenta canvas direto (lossless, sem modificação)
+        const baseBlob = await encodePng(rgba, width, height);
+        if (targetBytes === 0 || baseBlob.size <= targetBytes) return baseBlob;
 
-        // Já está dentro do alvo → retorna direto
-        if (targetBytes === 0 || baseBlob.size <= targetBytes) {
-            return baseBlob;
-        }
-
-        // 3. Busca binária por nível de quantização
-        // step maior = menos cores = arquivo menor
-        const steps = [4, 8, 12, 16, 24, 32, 48, 64, 96, 128];
-        let bestBlob = null;
-        let lo = 0, hi = steps.length - 1;
+        // Busca binária: paletas de 256 a 8 cores com dithering
+        const paletteSizes = [256, 192, 128, 96, 64, 48, 32, 24, 16, 8];
+        let lo = 0, hi = paletteSizes.length - 1, bestBlob = null;
 
         while (lo <= hi) {
-            const mid       = (lo + hi) >> 1;
-            const quantized = quantizePixels(rgba, steps[mid]);
-            const candidate = await encodePng(quantized, width, height);
+            const mid      = (lo + hi) >> 1;
+            const n        = paletteSizes[mid];
+            const palette  = buildPalette(rgba, n);
+            const dithered = applyDithering(rgba, width, height, palette);
+            const blob     = await encodePng(dithered, width, height);
 
-            if (candidate.size <= targetBytes) {
-                bestBlob = candidate;
-                hi = mid - 1; // tenta qualidade maior (step menor)
+            await tick(); // yield para UI não travar
+
+            if (blob.size <= targetBytes) {
+                bestBlob = blob;
+                hi = mid - 1; // tenta paleta maior (melhor qualidade)
             } else {
                 lo = mid + 1; // precisa comprimir mais
             }
         }
 
-        // Retorna melhor resultado válido ou o mais comprimido disponível
         if (bestBlob) return bestBlob;
 
-        // Último recurso: step máximo
-        const last = quantizePixels(rgba, steps[steps.length - 1]);
-        return await encodePng(last, width, height);
+        // Último recurso: paleta mínima com dithering
+        const palette  = buildPalette(rgba, 8);
+        const dithered = applyDithering(rgba, width, height, palette);
+        return await encodePng(dithered, width, height);
     }
 
-    // Utilitário: yield para o browser poder atualizar a UI
-    function tick() {
-        return new Promise(r => setTimeout(r, 0));
-    }
+    function tick() { return new Promise(r => setTimeout(r, 0)); }
 
-    // ── UI ────────────────────────────────────────────────────────────────────
+    // ═══════════════════════════════════════════════════════════════════════════
+    // UI
+    // ═══════════════════════════════════════════════════════════════════════════
 
     const emptySelection    = document.getElementById('empty-selection');
     const selectionList     = document.getElementById('selection-list');
@@ -323,28 +341,18 @@
     const loadingProgress   = document.getElementById('loading-progress');
     const progressBar       = document.getElementById('progress-bar');
 
-    let finalImages    = [];
-    let finalOriginals = [];
-    let objectUrlsToRevoke = [];
+    let finalImages = [], finalOriginals = [], objectUrlsToRevoke = [];
 
     function showPanel(id) {
         document.querySelectorAll('.panel').forEach(p => p.classList.remove('active'));
         document.getElementById(id).classList.add('active');
     }
-
-    function formatBytes(bytes) {
-        if (!bytes) return '0 KB';
-        return (bytes / 1024).toFixed(1) + ' KB';
-    }
-
+    function formatBytes(b) { return b ? (b/1024).toFixed(1)+' KB' : '0 KB'; }
     function updateCompressButtonState() {
-        const checked = document.querySelectorAll('.frame-checkbox:checked');
-        compressBtn.disabled = checked.length === 0;
-        compressBtn.textContent = checked.length > 0
-            ? `COMPRIMIR ${checked.length} ITEM(S)`
-            : 'COMPRIMIR SELEÇÃO';
+        const n = document.querySelectorAll('.frame-checkbox:checked').length;
+        compressBtn.disabled = n === 0;
+        compressBtn.textContent = n > 0 ? `COMPRIMIR ${n} ITEM(S)` : 'COMPRIMIR SELEÇÃO';
     }
-
     function openLightbox(url) {
         document.getElementById('lightbox-img').src = url;
         document.getElementById('lightbox').style.display = 'flex';
@@ -354,14 +362,13 @@
     document.getElementById('btn-deselect-all').onclick = () => { document.querySelectorAll('.frame-checkbox').forEach(cb => cb.checked = false); updateCompressButtonState(); };
     document.getElementById('btn-invert').onclick       = () => { document.querySelectorAll('.frame-checkbox').forEach(cb => cb.checked = !cb.checked); updateCompressButtonState(); };
 
-    // ── Mensagens do Figma (code.js) ──────────────────────────────────────────
     window.onmessage = async (event) => {
         const msg = event.data.pluginMessage;
         if (!msg) return;
 
         if (msg.type === 'initial-list') {
             const items = msg.items;
-            if (items.length === 0) {
+            if (!items.length) {
                 emptySelection.style.display = 'block';
                 selectionList.style.display  = 'none';
                 selectionControls.classList.remove('visible');
@@ -370,7 +377,6 @@
                 emptySelection.style.display = 'none';
                 selectionList.style.display  = 'flex';
                 selectionControls.classList.add('visible');
-
                 selectionList.innerHTML = items.map(item => `
                     <div class="file-item" id="item-${item.id}">
                         <input type="checkbox" class="frame-checkbox" value="${item.id}" checked tabindex="-1" onchange="updateCompressButtonState()">
@@ -389,9 +395,7 @@
                             </select>
                             <span class="kb-suffix">KB</span>
                         </div>
-                    </div>
-                `).join('');
-
+                    </div>`).join('');
                 updateCompressButtonState();
             }
         }
@@ -404,92 +408,63 @@
                 const blob = new Blob([msg.thumbBytes], { type: 'image/png' });
                 const url  = URL.createObjectURL(blob);
                 objectUrlsToRevoke.push(url);
-                thumbImg.src = url;
-                thumbImg.style.display = 'block';
+                thumbImg.src = url; thumbImg.style.display = 'block';
                 thumbImg.onclick = () => openLightbox(url);
             }
         }
-
         if (msg.type === 'size-error') {
-            const sizeLabel = document.getElementById(`size-${msg.id}`);
-            if (sizeLabel) sizeLabel.textContent = 'Erro ao ler peso';
+            const el = document.getElementById(`size-${msg.id}`);
+            if (el) el.textContent = 'Erro ao ler peso';
         }
+        if (msg.type === 'error') { showPanel('panel-setup'); alert(msg.message); }
 
-        if (msg.type === 'error') {
-            showPanel('panel-setup');
-            alert(msg.message);
-        }
-
-        // ── Bytes prontos → comprime localmente ───────────────────────────────
         if (msg.type === 'selection-bytes-ready') {
-            finalImages    = [];
-            finalOriginals = [];
-            resultsList.innerHTML = '';
-
+            finalImages = []; finalOriginals = []; resultsList.innerHTML = '';
             const toCompress = msg.compressedImages || [];
             const toKeep     = msg.originalImages   || [];
-            const total      = toCompress.length;
 
-            // Originais intactos (não marcados)
             for (const img of toKeep) {
-                const blob       = new Blob([img.bytes], { type: 'image/png' });
-                const previewUrl = URL.createObjectURL(blob);
-                objectUrlsToRevoke.push(previewUrl);
+                const blob = new Blob([img.bytes], { type: 'image/png' });
+                const url  = URL.createObjectURL(blob);
+                objectUrlsToRevoke.push(url);
                 finalOriginals.push({ name: `${img.name}.png`, blob });
-
                 resultsList.innerHTML += `
                     <div class="file-item is-original">
-                        <img src="${previewUrl}" class="file-item-thumb" onclick="openLightbox('${previewUrl}')" title="Clique para ver">
+                        <img src="${url}" class="file-item-thumb" onclick="openLightbox('${url}')">
                         <div class="file-item-info">
                             <div class="file-item-name">${img.name}.png</div>
                             <div class="file-item-meta"><span class="badge-original">ORIGINAL INTACTO</span> · ${formatBytes(img.original_size)}</div>
                         </div>
-                    </div>
-                `;
+                    </div>`;
             }
 
-            // Comprime cada imagem marcada
             try {
-                for (let i = 0; i < total; i++) {
+                for (let i = 0; i < toCompress.length; i++) {
                     const img = toCompress[i];
-                    loadingProgress.textContent = `${i + 1}/${total}: ${img.name}.png`;
-                    progressBar.style.width = Math.round((i / total) * 100) + '%';
+                    loadingProgress.textContent = `${i+1}/${toCompress.length}: ${img.name}.png`;
+                    progressBar.style.width = Math.round((i / toCompress.length) * 100) + '%';
+                    await tick();
 
-                    await tick(); // permite o browser atualizar a UI
+                    const compressedBlob = await compressImage(new Uint8Array(img.bytes), parseInt(img.target_kb) || 200);
+                    const url  = URL.createObjectURL(compressedBlob);
+                    objectUrlsToRevoke.push(url);
 
-                    const compressedBlob = await compressImage(
-                        new Uint8Array(img.bytes),
-                        parseInt(img.target_kb) || 200
-                    );
-
-                    const previewUrl = URL.createObjectURL(compressedBlob);
-                    objectUrlsToRevoke.push(previewUrl);
-
-                    // Nomenclatura inteligente: substitui número inicial pelo KB final
-                    const kbSize  = Math.round(compressedBlob.size / 1024);
+                    const kbSize = Math.round(compressedBlob.size / 1024);
                     let finalName = `${img.name}.png`;
-                    if (/^\d+/.test(img.name)) {
-                        finalName = `${img.name}.png`.replace(/^\d+(_?)/, `${kbSize}_`);
-                    }
+                    if (/^\d+/.test(img.name)) finalName = `${img.name}.png`.replace(/^\d+(_?)/, `${kbSize}_`);
 
                     finalImages.push({ name: finalName, blob: compressedBlob });
-
                     resultsList.innerHTML += `
                         <div class="file-item">
-                            <img src="${previewUrl}" class="file-item-thumb" onclick="openLightbox('${previewUrl}')" title="Clique para ver tamanho real">
+                            <img src="${url}" class="file-item-thumb" onclick="openLightbox('${url}')">
                             <div class="file-item-info">
                                 <div class="file-item-name">${finalName}</div>
-                                <div class="file-item-meta">
-                                    <del>${formatBytes(img.original_size)}</del> → <span class="ok">${formatBytes(compressedBlob.size)}</span>
-                                </div>
+                                <div class="file-item-meta"><del>${formatBytes(img.original_size)}</del> → <span class="ok">${formatBytes(compressedBlob.size)}</span></div>
                             </div>
-                        </div>
-                    `;
+                        </div>`;
                 }
 
                 progressBar.style.width = '100%';
-
-                // Configura botões de download
                 if (finalOriginals.length > 0) {
                     downloadAllBtn.textContent = 'BAIXAR PACOTE COMPLETO';
                     downloadCompressedBtn.style.display = 'flex';
@@ -498,7 +473,6 @@
                     downloadAllBtn.textContent = finalImages.length === 1 ? 'BAIXAR IMAGEM' : 'BAIXAR ARQUIVOS (ZIP)';
                     downloadCompressedBtn.style.display = 'none';
                 }
-
                 showPanel('panel-results');
 
             } catch (e) {
@@ -509,82 +483,62 @@
         }
     };
 
-    // ── Botão Comprimir ───────────────────────────────────────────────────────
     compressBtn.onclick = () => {
-        const allCheckboxes = document.querySelectorAll('.frame-checkbox');
         const toCompress = [], toKeep = [];
-
-        allCheckboxes.forEach(cb => {
+        document.querySelectorAll('.frame-checkbox').forEach(cb => {
             const id = cb.value;
-            if (cb.checked) {
-                toCompress.push({ id, targetKb: document.getElementById(`kb-${id}`).value || 200 });
-            } else {
-                toKeep.push({ id });
-            }
+            (cb.checked ? toCompress : toKeep).push(cb.checked ? { id, targetKb: document.getElementById(`kb-${id}`).value || 200 } : { id });
         });
-
-        if (toCompress.length === 0) return;
-
+        if (!toCompress.length) return;
         progressBar.style.width = '0%';
         loadingProgress.textContent = 'Preparando...';
         showPanel('panel-loading');
         parent.postMessage({ pluginMessage: { type: 'compress-selected', toCompress, toKeep } }, '*');
     };
 
-    // ── Download (ZIP local via JSZip CDN ou arquivo avulso) ──────────────────
     let _jszip = null;
     async function loadJSZip() {
         if (_jszip) return _jszip;
-        await new Promise((resolve, reject) => {
+        await new Promise((res, rej) => {
             const s = document.createElement('script');
             s.src = 'https://cdn.jsdelivr.net/npm/jszip@3.10.1/dist/jszip.min.js';
-            s.onload = resolve; s.onerror = reject;
+            s.onload = res; s.onerror = rej;
             document.head.appendChild(s);
         });
-        _jszip = window.JSZip;
-        return _jszip;
+        return (_jszip = window.JSZip);
     }
 
-    async function performDownload(imagesArray, btnElement) {
-        const originalText = btnElement.textContent;
-        btnElement.textContent = 'AGUARDE...';
-        btnElement.disabled = true;
-
+    async function performDownload(imgs, btn) {
+        const orig = btn.textContent;
+        btn.textContent = 'AGUARDE...'; btn.disabled = true;
         try {
-            if (imagesArray.length === 1) {
-                const url = URL.createObjectURL(imagesArray[0].blob);
+            if (imgs.length === 1) {
+                const url = URL.createObjectURL(imgs[0].blob);
                 const a = document.createElement('a');
-                a.href = url; a.download = imagesArray[0].name;
-                document.body.appendChild(a); a.click();
-                document.body.removeChild(a);
+                a.href = url; a.download = imgs[0].name;
+                document.body.appendChild(a); a.click(); document.body.removeChild(a);
                 URL.revokeObjectURL(url);
             } else {
                 const JSZip = await loadJSZip();
-                const zip   = new JSZip();
-                for (const img of imagesArray) zip.file(img.name, img.blob);
-                const zipBlob = await zip.generateAsync({ type: 'blob', compression: 'DEFLATE', compressionOptions: { level: 6 } });
-                const url = URL.createObjectURL(zipBlob);
-                const a   = document.createElement('a');
+                const zip = new JSZip();
+                for (const img of imgs) zip.file(img.name, img.blob);
+                const zb = await zip.generateAsync({ type:'blob', compression:'DEFLATE', compressionOptions:{level:6} });
+                const url = URL.createObjectURL(zb);
+                const a = document.createElement('a');
                 a.href = url; a.download = 'EYXO_Pacote_Final.zip';
-                document.body.appendChild(a); a.click();
-                document.body.removeChild(a);
+                document.body.appendChild(a); a.click(); document.body.removeChild(a);
                 URL.revokeObjectURL(url);
             }
-        } catch (e) {
-            alert('Erro ao baixar: ' + e.message);
-        } finally {
-            btnElement.textContent = originalText;
-            btnElement.disabled = false;
-        }
+        } catch(e) { alert('Erro ao baixar: ' + e.message); }
+        finally { btn.textContent = orig; btn.disabled = false; }
     }
 
     downloadAllBtn.onclick = () => performDownload([...finalOriginals, ...finalImages], downloadAllBtn);
     downloadCompressedBtn.onclick = () => performDownload(finalImages, downloadCompressedBtn);
-
     backBtn.onclick = () => {
         showPanel('panel-setup');
         progressBar.style.width = '0%';
-        objectUrlsToRevoke.forEach(url => URL.revokeObjectURL(url));
+        objectUrlsToRevoke.forEach(u => URL.revokeObjectURL(u));
         objectUrlsToRevoke = [];
     };
     </script>

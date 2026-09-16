@@ -29,14 +29,14 @@
 
 ## Tecnologia
 
-- **Motor de compressão:** `libimagequant-wasm` (mesma engine do `pngquant`) + fallback Canvas API
-- **Execução:** Web Worker local — não trava a interface durante a compressão
+- **Motor de compressão:** Median-Cut + Floyd-Steinberg Dithering (algoritmo equivalente ao `pngquant`) — Canvas API nativa
 - **Privacidade:** zero permissões de rede, zero upload, funciona offline
 
 ---
 
 ## Histórico (Changelog)
 
+- **v5.0.2** - Correção crítica de qualidade: quantizador substituído por Median-Cut + Floyd-Steinberg dithering (preserva gradientes e sombras).
 - **v5.0.1** - Correção: motor de compressão migrado de Web Worker para thread principal (compatibilidade com sandbox do Figma).
 - **v5.0.0** - Migração completa para plugin Figma standalone: compressão 100% local, servidor Render removido, pasta reorganizada.
-- **v4.10.0** - Plugin do Figma respeita as configurações de exportação nativas do nó (resolução customizada).
+
