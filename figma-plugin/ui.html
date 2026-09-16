@@ -2,6 +2,8 @@
 <html lang="pt-BR">
 <head>
     <meta charset="UTF-8">
+    <!-- UPNG.js: PNG decoder/encoder com quantização 8-bit indexada (equivalente ao pngquant) -->
+    <script src="https://cdn.jsdelivr.net/npm/upng-js@2.1.0/UPNG.min.js"></script>
     <style>
         :root {
             --eyxo-blue: #0000FF;
@@ -37,10 +39,10 @@
         .btn-group { display: flex; flex-direction: column; gap: 10px; margin-top: auto; }
         .selection-list { display: flex; flex-direction: column; gap: 12px; margin-bottom: 24px; flex: 1; overflow-y: auto; padding-right: 4px; }
         .empty-state { padding: 20px; text-align: center; background: var(--eyxo-surface); border: 1px dashed var(--eyxo-border); border-radius: 8px; color: var(--eyxo-text-muted); font-size: 13px; margin-bottom: 24px; }
-        .file-item { background: var(--eyxo-surface); border: 1px solid var(--eyxo-border); border-radius: 8px; padding: 12px; display: flex; align-items: center; gap: 12px; transition: border-color 0.2s; }
+        .file-item { background: var(--eyxo-surface); border: 1px solid var(--eyxo-border); border-radius: 8px; padding: 12px; display: flex; align-items: center; gap: 12px; transition: border-color 0.2s, opacity 0.15s; cursor: pointer; }
         .file-item:hover { border-color: #333; }
-        .file-item.is-original { border: 1px dashed var(--eyxo-border); opacity: 0.8; }
-        .file-item.unchecked { opacity: 0.4; }
+        .file-item.is-original { border: 1px dashed var(--eyxo-border); opacity: 0.8; cursor: default; }
+        .file-item.unchecked { opacity: 0.35; }
         input[type="checkbox"] { accent-color: var(--eyxo-blue); width: 16px; height: 16px; cursor: pointer; flex-shrink: 0; }
         .file-item-info { display: flex; flex-direction: column; flex: 1; overflow: hidden; }
         .file-item-name { font-size: 13px; font-weight: 600; white-space: normal; word-break: break-word; line-height: 1.3; }
@@ -52,7 +54,7 @@
         select.kb-input { background: transparent; border: none; color: var(--eyxo-text); font-family: var(--eyxo-font-mono); font-size: 13px; font-weight: 500; width: 100%; outline: none; text-align: right; cursor: pointer; -webkit-appearance: none; appearance: none; }
         select.kb-input option { background: var(--eyxo-surface); color: var(--eyxo-text); }
         .kb-suffix { color: var(--eyxo-text-muted); font-size: 11px; margin-left: 4px; font-weight: 600; pointer-events: none; }
-        .file-item-thumb { width: 44px; height: 44px; border-radius: 4px; background: #1a1a1a; object-fit: cover; flex-shrink: 0; cursor: pointer; transition: transform 0.2s; align-self: flex-start; }
+        .file-item-thumb { width: 44px; height: 44px; border-radius: 4px; background: #1a1a1a; object-fit: cover; flex-shrink: 0; transition: transform 0.2s; align-self: flex-start; }
         .file-item-thumb:hover { transform: scale(1.05); }
         #lightbox { display: none; position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.9); z-index: 1000; justify-content: center; align-items: center; cursor: pointer; flex-direction: column; }
         #lightbox img { max-width: 90%; max-height: 90%; border-radius: 8px; }
@@ -113,219 +115,73 @@
 
     <script>
     // ═══════════════════════════════════════════════════════════════════════════
-    // MOTOR DE COMPRESSÃO — Median-Cut + Floyd-Steinberg Dithering
-    // Qualidade visual equivalente ao pngquant. Roda 100% local.
+    // MOTOR DE COMPRESSÃO — UPNG.js (PNG 8-bit indexado, mesma abordagem do pngquant)
+    //
+    // Por que UPNG.js?
+    //   - canvas.toBlob() só produz PNG 32-bit RGBA → arquivo grande
+    //   - UPNG.encode() produz PNG 8-bit indexado → até 4x menor com mesma paleta
+    //   - Inclui quantização k-means + FS dithering internamente
+    //   - Resultado: mesma qualidade do servidor antigo, 100% local
     // ═══════════════════════════════════════════════════════════════════════════
 
-    // ── Decodificação PNG via <img> + <canvas> ──────────────────────────────
-    function decodePng(bytes) {
-        return new Promise((resolve, reject) => {
-            const blob = new Blob([bytes], { type: 'image/png' });
-            const url  = URL.createObjectURL(blob);
-            const img  = new Image();
-            img.onload = () => {
-                const w = img.naturalWidth, h = img.naturalHeight;
-                if (!w || !h) { URL.revokeObjectURL(url); reject(new Error('Imagem com dimensão zero')); return; }
-                const canvas = document.createElement('canvas');
-                canvas.width = w; canvas.height = h;
-                const ctx = canvas.getContext('2d');
-                ctx.drawImage(img, 0, 0);
-                URL.revokeObjectURL(url);
-                resolve({ width: w, height: h, data: ctx.getImageData(0, 0, w, h).data, ctx, canvas });
-            };
-            img.onerror = () => { URL.revokeObjectURL(url); reject(new Error('Falha ao carregar imagem')); };
-            img.src = url;
-        });
-    }
+    function tick() { return new Promise(r => setTimeout(r, 0)); }
 
-    // ── Codificação PNG via <canvas> ────────────────────────────────────────
-    function encodePng(rgba, width, height) {
-        return new Promise((resolve, reject) => {
-            const canvas = document.createElement('canvas');
-            canvas.width = width; canvas.height = height;
-            const ctx = canvas.getContext('2d');
-            ctx.putImageData(new ImageData(new Uint8ClampedArray(rgba), width, height), 0, 0);
-            canvas.toBlob(blob => {
-                if (!blob) { reject(new Error('Falha ao codificar PNG')); return; }
-                resolve(blob);
-            }, 'image/png');
-        });
-    }
-
-    // ── Median-Cut: constrói paleta de N cores a partir de amostras ─────────
-    function buildPalette(rgba, numColors) {
-        // Coleta amostras (pula transparentes e amostra para economizar memória)
-        const stride = Math.max(1, Math.floor(rgba.length / 4 / 8000)) * 4;
-        const R = [], G = [], B = [];
-        for (let i = 0; i < rgba.length; i += stride) {
-            if (rgba[i + 3] > 127) { R.push(rgba[i]); G.push(rgba[i+1]); B.push(rgba[i+2]); }
-        }
-        if (R.length === 0) return [[128,128,128,255]];
-
-        // Buckets de median-cut: cada bucket guarda índices das amostras
-        let buckets = [Array.from({length: R.length}, (_, i) => i)];
-
-        while (buckets.length < numColors) {
-            // Escolhe o bucket com maior volume de cor
-            let maxVol = -1, splitIdx = 0;
-            for (let bi = 0; bi < buckets.length; bi++) {
-                const b = buckets[bi];
-                if (b.length < 2) continue;
-                let rMin=255,rMax=0,gMin=255,gMax=0,bMin=255,bMax=0;
-                for (const idx of b) {
-                    if(R[idx]<rMin)rMin=R[idx]; if(R[idx]>rMax)rMax=R[idx];
-                    if(G[idx]<gMin)gMin=G[idx]; if(G[idx]>gMax)gMax=G[idx];
-                    if(B[idx]<bMin)bMin=B[idx]; if(B[idx]>bMax)bMax=B[idx];
-                }
-                const vol = (rMax-rMin+1) * (gMax-gMin+1) * (bMax-bMin+1);
-                if (vol > maxVol) { maxVol = vol; splitIdx = bi; }
-            }
-            if (maxVol <= 1) break;
-
-            // Divide o bucket pelo canal de maior amplitude
-            const b = buckets[splitIdx];
-            let rMin=255,rMax=0,gMin=255,gMax=0,bMin=255,bMax=0;
-            for (const idx of b) {
-                if(R[idx]<rMin)rMin=R[idx]; if(R[idx]>rMax)rMax=R[idx];
-                if(G[idx]<gMin)gMin=G[idx]; if(G[idx]>gMax)gMax=G[idx];
-                if(B[idx]<bMin)bMin=B[idx]; if(B[idx]>bMax)bMax=B[idx];
-            }
-            const rRange = rMax-rMin, gRange = gMax-gMin, bRange = bMax-bMin;
-            let ch = 0;
-            if (gRange >= rRange && gRange >= bRange) ch = 1;
-            else if (bRange >= rRange && bRange >= gRange) ch = 2;
-            const arr = ch === 0 ? R : (ch === 1 ? G : B);
-            b.sort((a, z) => arr[a] - arr[z]);
-            const mid = b.length >> 1;
-            buckets.splice(splitIdx, 1, b.slice(0, mid), b.slice(mid));
-        }
-
-        // Cor média de cada bucket → paleta final
-        return buckets.map(b => {
-            let r=0,g=0,bl=0;
-            for (const idx of b) { r+=R[idx]; g+=G[idx]; bl+=B[idx]; }
-            const n = b.length;
-            return [Math.round(r/n), Math.round(g/n), Math.round(bl/n)];
-        });
-    }
-
-    // ── Nearest-palette lookup com cache ────────────────────────────────────
-    function makeNearestFinder(palette) {
-        const cache = new Map();
-        return function(r, g, b) {
-            const key = (r << 16) | (g << 8) | b;
-            if (cache.has(key)) return cache.get(key);
-            let best = 0, bestDist = Infinity;
-            for (let i = 0; i < palette.length; i++) {
-                const [pr,pg,pb] = palette[i];
-                const d = (r-pr)**2 + (g-pg)**2 + (b-pb)**2;
-                if (d < bestDist) { bestDist = d; best = i; if (d === 0) break; }
-            }
-            cache.set(key, best);
-            return best;
-        };
-    }
-
-    // ── Floyd-Steinberg Dithering (garante gradientes suaves) ───────────────
-    function applyDithering(rgba, width, height, palette) {
-        const findNearest = makeNearestFinder(palette);
-
-        // Buffer de erro em ponto flutuante
-        const eR = new Float32Array(width * height);
-        const eG = new Float32Array(width * height);
-        const eB = new Float32Array(width * height);
-        const out = new Uint8ClampedArray(rgba.length);
-
-        for (let y = 0; y < height; y++) {
-            for (let x = 0; x < width; x++) {
-                const i  = (y * width + x) * 4;
-                const pi = y * width + x;
-                const a  = rgba[i + 3];
-
-                if (a < 128) {
-                    // Pixel transparente: zera tudo
-                    out[i] = out[i+1] = out[i+2] = out[i+3] = 0;
-                    continue;
-                }
-
-                // Cor original + erro acumulado (clamped 0-255)
-                const oldR = Math.min(255, Math.max(0, rgba[i]     + eR[pi]));
-                const oldG = Math.min(255, Math.max(0, rgba[i + 1] + eG[pi]));
-                const oldB = Math.min(255, Math.max(0, rgba[i + 2] + eB[pi]));
-
-                // Mapeia para cor mais próxima na paleta
-                const pIdx = findNearest(Math.round(oldR), Math.round(oldG), Math.round(oldB));
-                const [newR, newG, newB] = palette[pIdx];
-
-                out[i]     = newR;
-                out[i + 1] = newG;
-                out[i + 2] = newB;
-                out[i + 3] = 255;
-
-                // Calcula erro de quantização
-                const errR = oldR - newR;
-                const errG = oldG - newG;
-                const errB = oldB - newB;
-
-                // Distribui erro (pesos Floyd-Steinberg: 7, 3, 5, 1 / 16)
-                if (x + 1 < width) {
-                    eR[pi+1] += errR * 7/16; eG[pi+1] += errG * 7/16; eB[pi+1] += errB * 7/16;
-                }
-                if (y + 1 < height) {
-                    const ni = (y+1) * width + x;
-                    if (x > 0) {
-                        eR[ni-1] += errR * 3/16; eG[ni-1] += errG * 3/16; eB[ni-1] += errB * 3/16;
-                    }
-                    eR[ni]   += errR * 5/16; eG[ni]   += errG * 5/16; eB[ni]   += errB * 5/16;
-                    if (x + 1 < width) {
-                        eR[ni+1] += errR * 1/16; eG[ni+1] += errG * 1/16; eB[ni+1] += errB * 1/16;
-                    }
-                }
-            }
-        }
-        return out;
-    }
-
-    // ── Motor principal: busca binária entre tamanhos de paleta ─────────────
+    // ── Compressão principal via UPNG.js ─────────────────────────────────────
+    // Estratégia:
+    //   1. Decodifica o PNG original (UPNG.decode)
+    //   2. Tenta sem redução de paleta (lossless 32-bit)
+    //   3. Busca binária entre tamanhos de paleta (256 → 8 cores)
+    //      - UPNG com cnum>0 gera PNG 8-bit indexado (muito menor)
+    //      - Encontra o maior número de cores que ainda cabe no target
+    // ─────────────────────────────────────────────────────────────────────────
     async function compressImage(bytes, targetKb) {
         const targetBytes = targetKb > 0 ? targetKb * 1024 : 0;
 
-        const { width, height, data: rgba } = await decodePng(bytes);
+        // Verifica se UPNG carregou (script tag no <head>)
+        if (typeof UPNG === 'undefined') {
+            throw new Error('UPNG.js não carregou. Verifique a conexão e reabra o plugin.');
+        }
 
-        // Tenta canvas direto (lossless, sem modificação)
-        const baseBlob = await encodePng(rgba, width, height);
-        if (targetBytes === 0 || baseBlob.size <= targetBytes) return baseBlob;
+        // Decodifica PNG → obtém pixels RGBA brutos
+        const buffer  = bytes.buffer.slice(bytes.byteOffset, bytes.byteOffset + bytes.byteLength);
+        const decoded = UPNG.decode(buffer);
+        const rgba    = UPNG.toRGBA8(decoded)[0]; // Uint8Array RGBA8
+        const { width, height } = decoded;
 
-        // Busca binária: paletas de 256 a 8 cores com dithering
-        const paletteSizes = [256, 192, 128, 96, 64, 48, 32, 24, 16, 8];
-        let lo = 0, hi = paletteSizes.length - 1, bestBlob = null;
+        // 1. Tenta lossless primeiro
+        const losslessBuffer = UPNG.encode([rgba], width, height, 0, [0]);
+        if (targetBytes === 0 || losslessBuffer.byteLength <= targetBytes) {
+            return new Blob([losslessBuffer], { type: 'image/png' });
+        }
+
+        // 2. Busca binária por número de cores (PNG 8-bit indexado)
+        //    Maior cnum = melhor qualidade + arquivo maior
+        //    Menor cnum = menor qualidade + arquivo menor
+        const colorSteps = [256, 192, 128, 96, 64, 48, 32, 24, 16, 8];
+        let lo = 0, hi = colorSteps.length - 1, bestBuffer = null;
 
         while (lo <= hi) {
             const mid      = (lo + hi) >> 1;
-            const n        = paletteSizes[mid];
-            const palette  = buildPalette(rgba, n);
-            const dithered = applyDithering(rgba, width, height, palette);
-            const blob     = await encodePng(dithered, width, height);
+            const numColors = colorSteps[mid];
+            await tick();
 
-            await tick(); // yield para UI não travar
-
-            if (blob.size <= targetBytes) {
-                bestBlob = blob;
-                hi = mid - 1; // tenta paleta maior (melhor qualidade)
-            } else {
-                lo = mid + 1; // precisa comprimir mais
+            try {
+                const quantized = UPNG.encode([rgba], width, height, numColors, [0]);
+                if (quantized.byteLength <= targetBytes) {
+                    bestBuffer = quantized;
+                    hi = mid - 1; // tenta mais cores (melhor qualidade)
+                } else {
+                    lo = mid + 1; // precisa menos cores (mais compressão)
+                }
+            } catch (e) {
+                lo = mid + 1;
             }
         }
 
-        if (bestBlob) return bestBlob;
-
-        // Último recurso: paleta mínima com dithering
-        const palette  = buildPalette(rgba, 8);
-        const dithered = applyDithering(rgba, width, height, palette);
-        return await encodePng(dithered, width, height);
+        // Usa o melhor resultado encontrado, ou o mais comprimido possível
+        const result = bestBuffer || UPNG.encode([rgba], width, height, 8, [0]);
+        return new Blob([result], { type: 'image/png' });
     }
-
-    function tick() { return new Promise(r => setTimeout(r, 0)); }
 
     // ═══════════════════════════════════════════════════════════════════════════
     // UI
@@ -348,25 +204,22 @@
         document.querySelectorAll('.panel').forEach(p => p.classList.remove('active'));
         document.getElementById(id).classList.add('active');
     }
-    function formatBytes(b) { return b ? (b/1024).toFixed(1)+' KB' : '0 KB'; }
+    function formatBytes(b) { return b ? (b / 1024).toFixed(1) + ' KB' : '0 KB'; }
+
     function updateCompressButtonState() {
         const n = document.querySelectorAll('.frame-checkbox:checked').length;
         compressBtn.disabled = n === 0;
         compressBtn.textContent = n > 0 ? `COMPRIMIR ${n} ITEM(S)` : 'COMPRIMIR SELEÇÃO';
-        // Feedback visual: card dimmed quando desmarcado
         document.querySelectorAll('.frame-checkbox').forEach(cb => {
             const card = document.getElementById(`item-${cb.value}`);
             if (card) card.classList.toggle('unchecked', !cb.checked);
         });
     }
+
     function openLightbox(url) {
         document.getElementById('lightbox-img').src = url;
         document.getElementById('lightbox').style.display = 'flex';
     }
-
-    document.getElementById('btn-select-all').onclick   = () => { document.querySelectorAll('.frame-checkbox').forEach(cb => cb.checked = true);  updateCompressButtonState(); };
-    document.getElementById('btn-deselect-all').onclick = () => { document.querySelectorAll('.frame-checkbox').forEach(cb => cb.checked = false); updateCompressButtonState(); };
-    document.getElementById('btn-invert').onclick       = () => { document.querySelectorAll('.frame-checkbox').forEach(cb => cb.checked = !cb.checked); updateCompressButtonState(); };
 
     function toggleItem(event, id) {
         const cb = document.querySelector(`.frame-checkbox[value="${id}"]`);
@@ -375,6 +228,11 @@
         updateCompressButtonState();
     }
 
+    document.getElementById('btn-select-all').onclick   = () => { document.querySelectorAll('.frame-checkbox').forEach(cb => cb.checked = true);  updateCompressButtonState(); };
+    document.getElementById('btn-deselect-all').onclick = () => { document.querySelectorAll('.frame-checkbox').forEach(cb => cb.checked = false); updateCompressButtonState(); };
+    document.getElementById('btn-invert').onclick       = () => { document.querySelectorAll('.frame-checkbox').forEach(cb => cb.checked = !cb.checked); updateCompressButtonState(); };
+
+    // ── Mensagens do Figma (code.js) ──────────────────────────────────────────
     window.onmessage = async (event) => {
         const msg = event.data.pluginMessage;
         if (!msg) return;
@@ -391,12 +249,12 @@
                 selectionList.style.display  = 'flex';
                 selectionControls.classList.add('visible');
                 selectionList.innerHTML = items.map(item => `
-                    <div class="file-item" id="item-${item.id}" onclick="toggleItem(event,'${item.id}')" style="cursor:pointer;">
+                    <div class="file-item" id="item-${item.id}" onclick="toggleItem(event,'${item.id}')">
                         <input type="checkbox" class="frame-checkbox" value="${item.id}" checked tabindex="-1" onclick="event.stopPropagation()" onchange="updateCompressButtonState()">
                         <img id="thumb-${item.id}" class="file-item-thumb" style="display:none;" onclick="event.stopPropagation();openLightbox(this.src)">
                         <div class="file-item-info">
                             <div class="file-item-name">${item.name}</div>
-                            <div class="file-item-meta size-label" id="size-${item.id}">Calculando peso...</div>
+                            <div class="file-item-meta" id="size-${item.id}">Calculando peso...</div>
                         </div>
                         <div class="target-input-group" onclick="event.stopPropagation()">
                             <select class="kb-input" id="kb-${item.id}">
@@ -422,7 +280,7 @@
                 const url  = URL.createObjectURL(blob);
                 objectUrlsToRevoke.push(url);
                 thumbImg.src = url; thumbImg.style.display = 'block';
-                thumbImg.onclick = () => openLightbox(url);
+                thumbImg.onclick = (e) => { e.stopPropagation(); openLightbox(url); };
             }
         }
         if (msg.type === 'size-error') {
@@ -431,11 +289,13 @@
         }
         if (msg.type === 'error') { showPanel('panel-setup'); alert(msg.message); }
 
+        // ── Bytes prontos: comprime localmente via UPNG ────────────────────────
         if (msg.type === 'selection-bytes-ready') {
             finalImages = []; finalOriginals = []; resultsList.innerHTML = '';
             const toCompress = msg.compressedImages || [];
             const toKeep     = msg.originalImages   || [];
 
+            // Originais intactos (não marcados) — passa direto sem reprocessar
             for (const img of toKeep) {
                 const blob = new Blob([img.bytes], { type: 'image/png' });
                 const url  = URL.createObjectURL(blob);
@@ -454,21 +314,27 @@
             try {
                 for (let i = 0; i < toCompress.length; i++) {
                     const img = toCompress[i];
-                    loadingProgress.textContent = `${i+1}/${toCompress.length}: ${img.name}.png`;
+                    loadingProgress.textContent = `${i + 1}/${toCompress.length}: ${img.name}.png`;
                     progressBar.style.width = Math.round((i / toCompress.length) * 100) + '%';
                     await tick();
 
-                    const compressedBlob = await compressImage(new Uint8Array(img.bytes), parseInt(img.target_kb) || 200);
-                    const url  = URL.createObjectURL(compressedBlob);
+                    const compressedBlob = await compressImage(
+                        new Uint8Array(img.bytes),
+                        parseInt(img.target_kb) || 200
+                    );
+
+                    const url    = URL.createObjectURL(compressedBlob);
                     objectUrlsToRevoke.push(url);
 
-                    const kbSize = Math.round(compressedBlob.size / 1024);
+                    const kbSize  = Math.round(compressedBlob.size / 1024);
                     let finalName = `${img.name}.png`;
-                    if (/^\d+/.test(img.name)) finalName = `${img.name}.png`.replace(/^\d+(_?)/, `${kbSize}_`);
+                    if (/^\d+/.test(img.name)) {
+                        finalName = `${img.name}.png`.replace(/^\d+(_?)/, `${kbSize}_`);
+                    }
 
                     finalImages.push({ name: finalName, blob: compressedBlob });
                     resultsList.innerHTML += `
-                        <div class="file-item">
+                        <div class="file-item is-original" style="cursor:default;">
                             <img src="${url}" class="file-item-thumb" onclick="openLightbox('${url}')">
                             <div class="file-item-info">
                                 <div class="file-item-name">${finalName}</div>
@@ -478,6 +344,7 @@
                 }
 
                 progressBar.style.width = '100%';
+
                 if (finalOriginals.length > 0) {
                     downloadAllBtn.textContent = 'BAIXAR PACOTE COMPLETO';
                     downloadCompressedBtn.style.display = 'flex';
@@ -490,7 +357,7 @@
 
             } catch (e) {
                 showPanel('panel-setup');
-                alert('Erro na compressão local: ' + e.message);
+                alert('Erro na compressão: ' + e.message);
                 console.error(e);
             }
         }
@@ -500,7 +367,8 @@
         const toCompress = [], toKeep = [];
         document.querySelectorAll('.frame-checkbox').forEach(cb => {
             const id = cb.value;
-            (cb.checked ? toCompress : toKeep).push(cb.checked ? { id, targetKb: document.getElementById(`kb-${id}`).value || 200 } : { id });
+            if (cb.checked) toCompress.push({ id, targetKb: document.getElementById(`kb-${id}`).value || 200 });
+            else            toKeep.push({ id });
         });
         if (!toCompress.length) return;
         progressBar.style.width = '0%';
@@ -509,6 +377,7 @@
         parent.postMessage({ pluginMessage: { type: 'compress-selected', toCompress, toKeep } }, '*');
     };
 
+    // ── Download: arquivo avulso ou ZIP via JSZip ─────────────────────────────
     let _jszip = null;
     async function loadJSZip() {
         if (_jszip) return _jszip;
@@ -535,14 +404,14 @@
                 const JSZip = await loadJSZip();
                 const zip = new JSZip();
                 for (const img of imgs) zip.file(img.name, img.blob);
-                const zb = await zip.generateAsync({ type:'blob', compression:'DEFLATE', compressionOptions:{level:6} });
+                const zb = await zip.generateAsync({ type: 'blob', compression: 'DEFLATE', compressionOptions: { level: 6 } });
                 const url = URL.createObjectURL(zb);
                 const a = document.createElement('a');
                 a.href = url; a.download = 'EYXO_Pacote_Final.zip';
                 document.body.appendChild(a); a.click(); document.body.removeChild(a);
                 URL.revokeObjectURL(url);
             }
-        } catch(e) { alert('Erro ao baixar: ' + e.message); }
+        } catch (e) { alert('Erro ao baixar: ' + e.message); }
         finally { btn.textContent = orig; btn.disabled = false; }
     }
 

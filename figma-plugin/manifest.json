@@ -7,5 +7,10 @@
   "capabilities": [],
   "editorType": [
     "figma"
-  ]
+  ],
+  "networkAccess": {
+    "allowedDomains": [
+      "https://cdn.jsdelivr.net"
+    ]
+  }
 }
