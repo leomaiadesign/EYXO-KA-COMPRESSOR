@@ -1,10 +1,14 @@
 figma.showUI(__html__, { width: 400, height: 600 });
 
-// Retorna todos os frames, components e instances da página atual
+// Se o usuário tem frames específicos selecionados no Figma, usa só eles.
+// Caso contrário, lista todos os frames da página.
 function getExportableFrames() {
-  return figma.currentPage.children.filter(node =>
-    node.type === 'FRAME' || node.type === 'COMPONENT' || node.type === 'INSTANCE'
-  );
+  const VALID_TYPES = new Set(['FRAME', 'COMPONENT', 'INSTANCE']);
+
+  const selected = figma.currentPage.selection.filter(n => VALID_TYPES.has(n.type));
+  if (selected.length > 0) return selected;
+
+  return figma.currentPage.children.filter(n => VALID_TYPES.has(n.type));
 }
 
 const frames = getExportableFrames();
