@@ -2,6 +2,8 @@
 <html lang="pt-BR">
 <head>
     <meta charset="UTF-8">
+    <!-- pako: Necessário para o UPNG.js descompactar dados -->
+    <script src="https://cdn.jsdelivr.net/npm/pako@1.0.11/dist/pako.min.js"></script>
     <!-- UPNG.js: PNG decoder/encoder com quantização 8-bit indexada (equivalente ao pngquant) -->
     <script src="https://cdn.jsdelivr.net/npm/upng-js@2.1.0/UPNG.min.js"></script>
     <style>
@@ -89,6 +91,7 @@
             <div style="text-align:center;padding:20px;color:#8F8F8F;font-size:13px;">Buscando frames...</div>
         </div>
         <button id="compress-btn" class="btn" disabled>COMPRIMIR SELEÇÃO</button>
+        <div class="mono-font" style="text-align: center; margin-top: 15px; font-family: var(--eyxo-font-mono); font-size: 10px; color: var(--eyxo-text-muted);">v5.1.4</div>
     </div>
 
     <div id="panel-loading" class="panel">
@@ -134,6 +137,59 @@
     //      - UPNG com cnum>0 gera PNG 8-bit indexado (muito menor)
     //      - Encontra o maior número de cores que ainda cabe no target
     // ─────────────────────────────────────────────────────────────────────────
+    function applyFloydSteinberg(rgba, width, height, palette) {
+        const out = new Uint8Array(rgba.length);
+        const errors = new Float32Array(rgba.length);
+        for (let i = 0; i < rgba.length; i++) errors[i] = rgba[i];
+        
+        function getClosestColor(r, g, b, a) {
+            let minDest = Infinity;
+            let best = palette[0];
+            for(let i=0; i<palette.length; i++) {
+                let p = palette[i];
+                let dr = r - p[0], dg = g - p[1], db = b - p[2], da = a - p[3];
+                let d = dr*dr + dg*dg + db*db + da*da;
+                if (d < minDest) { minDest = d; best = p; }
+            }
+            return best;
+        }
+
+        for (let y = 0; y < height; y++) {
+            for (let x = 0; x < width; x++) {
+                const i = (y * width + x) * 4;
+                const r = errors[i], g = errors[i+1], b = errors[i+2], a = errors[i+3];
+                
+                const best = getClosestColor(r, g, b, a);
+                out[i] = best[0]; out[i+1] = best[1]; out[i+2] = best[2]; out[i+3] = best[3];
+                
+                const er = r - best[0], eg = g - best[1], eb = b - best[2], ea = a - best[3];
+                
+                if (x + 1 < width) {
+                    const idx = i + 4;
+                    errors[idx]   += er * 0.4375; errors[idx+1] += eg * 0.4375;
+                    errors[idx+2] += eb * 0.4375; errors[idx+3] += ea * 0.4375;
+                }
+                if (y + 1 < height) {
+                    if (x - 1 >= 0) {
+                        const idx = i + width * 4 - 4;
+                        errors[idx]   += er * 0.1875; errors[idx+1] += eg * 0.1875;
+                        errors[idx+2] += eb * 0.1875; errors[idx+3] += ea * 0.1875;
+                    }
+                    const idx2 = i + width * 4;
+                    errors[idx2]   += er * 0.3125; errors[idx2+1] += eg * 0.3125;
+                    errors[idx2+2] += eb * 0.3125; errors[idx2+3] += ea * 0.3125;
+                    
+                    if (x + 1 < width) {
+                        const idx3 = i + width * 4 + 4;
+                        errors[idx3]   += er * 0.0625; errors[idx3+1] += eg * 0.0625;
+                        errors[idx3+2] += eb * 0.0625; errors[idx3+3] += ea * 0.0625;
+                    }
+                }
+            }
+        }
+        return out;
+    }
+
     async function compressImage(bytes, targetKb) {
         const targetBytes = targetKb > 0 ? targetKb * 1024 : 0;
 
@@ -145,7 +201,8 @@
         // Decodifica PNG → obtém pixels RGBA brutos
         const buffer  = bytes.buffer.slice(bytes.byteOffset, bytes.byteOffset + bytes.byteLength);
         const decoded = UPNG.decode(buffer);
-        const rgba    = UPNG.toRGBA8(decoded)[0]; // Uint8Array RGBA8
+        const rgba    = UPNG.toRGBA8(decoded)[0]; // ArrayBuffer
+        const rgbaUint8 = new Uint8Array(rgba);
         const { width, height } = decoded;
 
         // 1. Tenta lossless primeiro
@@ -154,9 +211,7 @@
             return new Blob([losslessBuffer], { type: 'image/png' });
         }
 
-        // 2. Busca binária por número de cores (PNG 8-bit indexado)
-        //    Maior cnum = melhor qualidade + arquivo maior
-        //    Menor cnum = menor qualidade + arquivo menor
+        // 2. Busca binária com Floyd-Steinberg Dithering
         const colorSteps = [256, 192, 128, 96, 64, 48, 32, 24, 16, 8];
         let lo = 0, hi = colorSteps.length - 1, bestBuffer = null;
 
@@ -166,7 +221,34 @@
             await tick();
 
             try {
-                const quantized = UPNG.encode([rgba], width, height, numColors, [0]);
+                // a) Usa UPNG para extrair a paleta Median-Cut ideal para `numColors`
+                const qRes = UPNG.quantize([rgba.slice(0)], numColors);
+                const qRgba = new Uint8Array(qRes.bufs[0]);
+                const palette = [];
+                const seen = new Set();
+                for(let i=0; i<qRgba.length; i+=4) {
+                     let r = qRgba[i], g = qRgba[i+1], b = qRgba[i+2], a = qRgba[i+3];
+                     // UPNG.quantize premultiplica o alpha. Precisamos reverter para a paleta correta:
+                     if (a > 0 && a < 255) {
+                         r = Math.min(255, Math.max(0, Math.round(r * 255 / a)));
+                         g = Math.min(255, Math.max(0, Math.round(g * 255 / a)));
+                         b = Math.min(255, Math.max(0, Math.round(b * 255 / a)));
+                     }
+                     const c = (r<<24) | (g<<16) | (b<<8) | a;
+                     if (!seen.has(c)) {
+                         seen.add(c);
+                         palette.push([r, g, b, a]);
+                     }
+                }
+
+                // b) Aplica Floyd-Steinberg usando a paleta encontrada
+                const ditheredRgba = applyFloydSteinberg(rgbaUint8, width, height, palette);
+
+                // c) Empacota em PNG.
+                // PASSAMOS 0 AQUI! Isso diz ao UPNG para não re-quantizar.
+                // Como o ditheredRgba já tem <= 256 cores (da paleta), ele gera um PNG 8-bit indexado perfeito.
+                const quantized = UPNG.encode([ditheredRgba.buffer], width, height, 0, [0]);
+                
                 if (quantized.byteLength <= targetBytes) {
                     bestBuffer = quantized;
                     hi = mid - 1; // tenta mais cores (melhor qualidade)
@@ -178,7 +260,7 @@
             }
         }
 
-        // Usa o melhor resultado encontrado, ou o mais comprimido possível
+        // Usa o melhor resultado encontrado, ou o menor possível
         const result = bestBuffer || UPNG.encode([rgba], width, height, 8, [0]);
         return new Blob([result], { type: 'image/png' });
     }
@@ -407,7 +489,25 @@
                 const zb = await zip.generateAsync({ type: 'blob', compression: 'DEFLATE', compressionOptions: { level: 6 } });
                 const url = URL.createObjectURL(zb);
                 const a = document.createElement('a');
-                a.href = url; a.download = 'EYXO_Pacote_Final.zip';
+                
+                let zipName = 'EYXO_Pacote_Final.zip';
+                if (imgs.length > 0) {
+                    let base = imgs[0].name.replace(/\.png$/i, '');
+                    base = base.replace(/^\d+_/, ''); // remove peso inicial
+                    
+                    // Remove formato e resolução (ex: _PopUp_884x1178 -> remove _PopUp_884x1178)
+                    let clean = base.replace(/_[^_]+_\d+x\d+$/, '');
+                    if (clean && clean !== base) {
+                        base = clean;
+                    } else {
+                        // Fallback: remove só a resolução
+                        base = base.replace(/_\d+x\d+$/, '');
+                    }
+                    
+                    if (base) zipName = base + '.zip';
+                }
+                
+                a.href = url; a.download = zipName;
                 document.body.appendChild(a); a.click(); document.body.removeChild(a);
                 URL.revokeObjectURL(url);
             }

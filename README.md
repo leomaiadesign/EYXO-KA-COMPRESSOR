@@ -36,7 +36,7 @@
 
 ## Histórico (Changelog)
 
-- **v5.0.2** - Correção crítica de qualidade: quantizador substituído por Median-Cut + Floyd-Steinberg dithering (preserva gradientes e sombras).
-- **v5.0.1** - Correção: motor de compressão migrado de Web Worker para thread principal (compatibilidade com sandbox do Figma).
-- **v5.0.0** - Migração completa para plugin Figma standalone: compressão 100% local, servidor Render removido, pasta reorganizada.
+- **v5.1.4** - Hotfix: Correção final do *crash* silencioso causado por incompatibilidade de tipos (`ArrayBuffer` vs `Uint8Array`) que forçava o plugin a exportar imagens destruídas com apenas 8 cores.
+- **v5.1.3** - Hotfix: Correção crítica na requantização do dithering que estava distorcendo as cores (cores invertidas/sépia).
+- **v5.1.2** - Correção de Qualidade: Implementação em JS nativo do Floyd-Steinberg dithering em conjunto com a quantização, eliminando *banding* em sombras/gradientes.
 
