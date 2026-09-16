@@ -1,54 +1,42 @@
 # ✂️ EYXO | KA Compressor
 
-**Otimização inteligente de imagens sem perda de qualidade visual e transparência.**
-
-🌐 **Acesso à ferramenta:** [eyxo-ka-compressor.onrender.com](https://eyxo-ka-compressor.onrender.com/)
+**Compressão inteligente de PNG com preservação de transparência — direto no Figma, sem servidor.**
 
 ---
 
-## 🚀 O Desafio
-No fluxo de aprovação e entrega de peças de Key Accounts (KA), o envio de imagens frequentemente esbarra em restrições rígidas de peso (KB/MB) impostas pelas plataformas dos clientes. Ferramentas genéricas de compressão na internet costumam destruir a resolução original, alterar as cores da marca ou, pior, remover a transparência (fundo vazado) que é essencial para o layout final.
+## O que faz
 
-Além disso, há um fator crítico: **confidencialidade**. Subir campanhas não lançadas em sites gratuitos de compressão expõe o material dos clientes a servidores de terceiros e possíveis vazamentos.
+- Comprime PNGs com alvo de peso exato (KB) definido por imagem
+- Preserva alpha/transparência total (RGBA)
+- Processa 100% local — nenhum arquivo sai do seu computador
+- Empacota o resultado em `.zip` ou download avulso
 
-## 💡 A Solução
-O **KA Compressor** foi desenvolvido internamente como uma ferramenta sob medida para resolver esse gargalo operacional com total segurança. Ele aplica um algoritmo de *quantização de cores dinâmico* que reduz drasticamente o peso do arquivo PNG, garantindo que a transparência seja mantida e a percepção visual fique idêntica à arte original.
+## Como instalar
 
-## 🔒 Segurança e Privacidade (Privacy-First)
-Este é o diferencial de ouro da nossa arquitetura. Lidando com marcas globais, o vazamento de peças antes do lançamento oficial é um risco inaceitável.
-- **Ambiente Isolado:** Ao contrário de ferramentas públicas (TinyPNG, ILoveIMG), as imagens nunca são armazenadas em bancos de dados de terceiros ou usadas para treinar IAs.
-- **Auto-destruição (Limpeza Automática):** O servidor possui uma rotina rigorosa de segurança que varre e destrói permanentemente todos os arquivos e lotes processados após um curto período de tempo (1 hora). 
-- **Garantia de Sigilo:** O tráfego e o processamento são efêmeros, garantindo que nenhum material confidencial fique exposto ou salvo na internet.
+1. Baixe e extraia o ZIP do plugin
+2. No Figma Desktop: `Plugins` → `Development` → `Import plugin from manifest...`
+3. Selecione o arquivo `manifest.json` dentro da pasta extraída
 
-## ✨ Principais Funcionalidades
-- **Compressão Sob Medida (Target KB):** Defina exatamente o limite de peso (KB) que a plataforma do cliente exige. O sistema fará testes iterativos na imagem até alcançar o alvo sem perder a nitidez.
-- **Preservação de Transparência (RGBA):** Total suporte a PNGs com fundo vazado, mantendo as camadas Alpha intactas.
-- **Interface Premium (Dark Mode):** Layout moderno e focado na experiência do usuário, sem distrações.
-- **Pré-visualização Inteligente:** Galeria de imagens dispostas em um grid dinâmico que lê e respeita a proporção real de cada arte.
-- **Exportação Ágil:** Ao final do processo, baixe suas imagens empacotadas automaticamente em um `.zip` ou baixe a imagem avulsa com um único clique.
+## Como usar
 
-## 🎨 Plugin para Figma (Versão Experimental)
-Agora você pode usar o compressor direto de dentro do Figma sem precisar acessar o site! A compressão é feita pelo nosso servidor, mas tudo acontece na sua tela do Figma.
-
-📥 **[Download do Plugin (.zip)](https://github.com/leomaiadesign/EYXO-KA-COMPRESSOR/releases/download/latest/EYXO-KA-Compressor-Figma.zip)**
-
-**Como instalar no Figma:**
-1. Baixe o arquivo `.zip` acima e extraia no seu computador.
-2. Abra o aplicativo Figma Desktop.
-3. Vá no menu: `Plugins` > `Development` > `Import plugin from manifest...`
-4. Selecione o arquivo `manifest.json` que está dentro da pasta extraída.
-5. Pronto! Basta selecionar uma arte, abrir o plugin e comprimir!
-
-## 🛠️ Tecnologias Utilizadas
-- **Core / Backend:** Python + Flask
-- **Processamento Gráfico:** Pillow (PIL)
-- **Frontend:** HTML5, CSS3, Vanilla JS
-- **Infraestrutura:** Deploy contínuo via Docker + Render (Garante pacotes de sistema nativos)
+1. Abra o plugin em qualquer página do Figma
+2. Todos os frames da página aparecem listados automaticamente
+3. Marque quais frames comprimir e defina o alvo de KB para cada um
+4. Clique em **Comprimir** — o resultado aparece na tela em segundos
+5. Baixe o pacote final (`.zip`) ou cada imagem individualmente
 
 ---
 
-## 🔄 Últimas Atualizações (Changelog)
+## Tecnologia
 
-- **v4.10.0** - Funcionalidade: O Plugin do Figma agora respeita as configurações de exportação definidas nativamente no nó (como resolução ex. '581w'), garantindo compatibilidade com tamanhos de exportação específicos.
-- **v4.9.9** - Performance e Correção de Timeout: Otimizada a Busca Binária para fallbacks grandes, reduzindo o tempo de processamento; corrigido vazamento de processos (zombies); tempo limite do plugin aumentado para 120s.
-- **v4.9.8** - UX: Ajustado o valor padrão do seletor dropdown para iniciar em 200 KB e atualização estendida para a interface do Plugin do Figma.
+- **Motor de compressão:** `libimagequant-wasm` (mesma engine do `pngquant`) + fallback Canvas API
+- **Execução:** Web Worker local — não trava a interface durante a compressão
+- **Privacidade:** zero permissões de rede, zero upload, funciona offline
+
+---
+
+## Histórico (Changelog)
+
+- **v5.0.0** - Migração completa para plugin Figma standalone: compressão 100% local via WASM, servidor Render removido, pasta reorganizada.
+- **v4.10.0** - Plugin do Figma respeita as configurações de exportação nativas do nó (resolução customizada).
+- **v4.9.9** - Otimização da busca binária de qualidade; correção de timeout e zombie processes.

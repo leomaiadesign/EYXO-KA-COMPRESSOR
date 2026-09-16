@@ -7,10 +7,5 @@
   "capabilities": [],
   "editorType": [
     "figma"
-  ],
-  "networkAccess": {
-    "allowedDomains": [
-      "https://eyxo-ka-compressor.onrender.com"
-    ]
-  }
+  ]
 }
