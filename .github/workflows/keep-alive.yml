@@ -1,20 +1,8 @@
-name: Keep Server Alive
+name: Keep Server Alive (DESATIVADO)
+
+# Este workflow foi desativado em v5.0.0.
+# O servidor Render não é mais utilizado.
+# A compressão agora roda 100% localmente via WASM no plugin Figma.
 
 on:
-  schedule:
-    - cron: '*/14 * * * *'  # A cada 14 minutos
-  workflow_dispatch:          # Permite rodar manualmente se precisar
-
-jobs:
-  ping:
-    runs-on: ubuntu-latest
-    steps:
-      - name: Ping KA Compressor API
-        run: |
-          STATUS=$(curl -s -o /dev/null -w "%{http_code}" https://eyxo-ka-compressor.onrender.com/api/ping)
-          echo "Server responded with HTTP $STATUS"
-          if [ "$STATUS" != "200" ]; then
-            echo "⚠️ Server returned unexpected status: $STATUS"
-          else
-            echo "✅ Server is awake and healthy."
-          fi
+  workflow_dispatch: # Mantido apenas para rodar manualmente se necessário no futuro
