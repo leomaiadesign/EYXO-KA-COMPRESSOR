@@ -1,8 +1,0 @@
-# Ignora arquivos de ambiente virtual e pastas desnecessárias no servidor
-venv/
-.git/
-.DS_Store
-__pycache__/
-*.pyc
-## BACKUPS/
-static/temp/*

@@ -1,8 +1,0 @@
-name: Keep Server Alive (DESATIVADO)
-
-# Este workflow foi desativado em v5.0.0.
-# O servidor Render não é mais utilizado.
-# A compressão agora roda 100% localmente via WASM no plugin Figma.
-
-on:
-  workflow_dispatch: # Mantido apenas para rodar manualmente se necessário no futuro

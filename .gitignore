@@ -17,4 +17,4 @@ static/temp/*
 venv/
 
 # Backups locais (nunca subir para o GitHub)
-## BACKUPS/
+\#\# BACKUPS/
